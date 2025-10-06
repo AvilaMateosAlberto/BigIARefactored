@@ -1,25 +1,6 @@
 // src/backend/middleware/auth.js
 const jwt = require('jsonwebtoken');
-
-const ACCESS_SECRET = process.env.ACCESS_TOKEN_SECRET || process.env.JWT_SECRET;
-
-// Lee token de Authorization: Bearer <token> o de cookie "session"
-function extractToken(req) {
-  const auth = req.headers['authorization'] || req.headers['Authorization'];
-  if (auth && typeof auth === 'string' && auth.toLowerCase().startsWith('bearer ')) {
-    return auth.split(/\s+/, 2)[1].trim();
-  }
-  return req.cookies?.session || null;
-}
-
-// Verifica JWT y devuelve el payload o null
-function verifyJwt(token) {
-  try {
-    return jwt.verify(token, ACCESS_SECRET);
-  } catch {
-    return null;
-  }
-}
+const ACCESS_SECRET = process.env.ACCESS_TOKEN_SECRET;
 
 // Middleware: exige token válido, adjunta req.user
 function verifyToken(req, res, next) {
@@ -59,8 +40,6 @@ function authorizePermission(permissionName) {
 }
 
 module.exports = {
-  extractToken,
-  verifyJwt,
   verifyToken,
   authorizeMinLevel,
   authorizePermission,

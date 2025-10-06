@@ -1,7 +1,7 @@
 // src/backend/routes/settings.js
 const express = require('express');
 const router = express.Router();
-const pool = require('../db'); // ajusta la ruta a tu pool/knex
+const pool = require('../db');
 const { verifyToken, authorizeMinLevel } = require('../middleware/auth');
 
 const DEFAULTS = {
@@ -12,6 +12,22 @@ const DEFAULTS = {
   login_message: 'Acceso a BigIA 2.0',
 };
 
+// Extrae la configuración de la aplicación de base de datos
+async function getAppConfig() {
+  const { rows } = await pool.query(
+    `SELECT topbar_color, theme_mode, topbar_text, document_title, login_message
+     FROM app_config WHERE id = 1`
+  );
+  const cfg = rows[0] || DEFAULTS;
+  return {
+    topbar_color: isHex(cfg.topbar_color) ? cfg.topbar_color : DEFAULTS.topbar_color,
+    theme_mode: cfg.theme_mode === 'dark' ? 'dark' : 'light',
+    topbar_text: clampStr(cfg.topbar_text, 60) || DEFAULTS.topbar_text,
+    document_title: clampStr(cfg.document_title, 60) || DEFAULTS.document_title,
+    login_message: clampStr(cfg.login_message, 120) || DEFAULTS.login_message,
+  };
+}
+
 // Utilidades de saneado
 const isHex = (c) => /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(c || '');
 const clampStr = (s, n) => (s ?? '').toString().slice(0, n);
@@ -19,18 +35,7 @@ const clampStr = (s, n) => (s ?? '').toString().slice(0, n);
 // ====== PÚBLICO: lo usamos en el login/pre-bootstrap ======
 router.get('/public', async (_req, res) => {
   try {
-    const { rows } = await pool.query(
-      `SELECT topbar_color, theme_mode, topbar_text, document_title, login_message
-       FROM app_config WHERE id = 1`
-    );
-    const cfg = rows[0] || DEFAULTS;
-    res.json({
-      topbar_color: isHex(cfg.topbar_color) ? cfg.topbar_color : DEFAULTS.topbar_color,
-      theme_mode: cfg.theme_mode === 'dark' ? 'dark' : 'light',
-      topbar_text: clampStr(cfg.topbar_text, 60) || DEFAULTS.topbar_text,
-      document_title: clampStr(cfg.document_title, 60) || DEFAULTS.document_title,
-      login_message: clampStr(cfg.login_message, 120) || DEFAULTS.login_message,
-    });
+    res.json(await getAppConfig());
   } catch (e) {
     console.error(e);
     res.json(DEFAULTS);
@@ -40,24 +45,12 @@ router.get('/public', async (_req, res) => {
 // ====== PRIVADO (admin) ======
 router.get('/', verifyToken, authorizeMinLevel(2), async (_req, res) => {
   try {
-    const { rows } = await pool.query(
-      `SELECT topbar_color, theme_mode, topbar_text, document_title, login_message
-       FROM app_config WHERE id = 1`
-    );
-    const cfg = rows[0] || DEFAULTS;
-    res.json({
-      topbar_color: isHex(cfg.topbar_color) ? cfg.topbar_color : DEFAULTS.topbar_color,
-      theme_mode: cfg.theme_mode === 'dark' ? 'dark' : 'light',
-      topbar_text: clampStr(cfg.topbar_text, 60) || DEFAULTS.topbar_text,
-      document_title: clampStr(cfg.document_title, 60) || DEFAULTS.document_title,
-      login_message: clampStr(cfg.login_message, 120) || DEFAULTS.login_message,
-    });
+    res.json(await getAppConfig());
   } catch (e) {
     console.error(e);
     res.status(500).json({ error: 'settings_read_failed' });
   }
 });
-
 router.put('/', verifyToken, authorizeMinLevel(2), async (req, res) => {
   try {
     const {

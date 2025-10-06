@@ -6,12 +6,13 @@ const express = require('express');
 const cors = require('cors');
 const compression = require('compression');
 const cookieParser = require('cookie-parser');
-const jwt = require('jsonwebtoken');
+
 const db = require('./db'); // Pool + waitForDb()
 const authRoutes = require('./routes/auth');
 const menuRoutes = require('./routes/menu');
 const settingsRoutes = require('./routes/settings');
 const revealjsApiRoutes = require('./routes/revealjsapi');
+const { verifyToken } = require('./middleware/auth');
 const app = express();
 
 /* =========================
@@ -24,27 +25,6 @@ app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());                 // <- para leer cookie 'rt' en /auth/refresh
 
-/* =========================
-   Utilidades de Autenticación (JWT)
-   ========================= */
-const ACCESS_SECRET = process.env.ACCESS_TOKEN_SECRET;
-
-// Extrae access token del header Authorization (Bearer)
-function extractToken(req) {
-  const auth = req.headers['authorization'] || req.headers['Authorization'];
-  if (auth && typeof auth === 'string' && auth.toLowerCase().startsWith('bearer ')) {
-    return auth.split(/\s+/, 2)[1].trim();
-  }
-  return null;
-}
-// Coteja el token con ACECESS_SECRET
-function verifyJwt(token) {
-  try {
-    return jwt.verify(token, ACCESS_SECRET);
-  } catch {
-    return null;
-  }
-}
 /* =========================
    Endpoints públicos
    ========================= */
@@ -64,24 +44,20 @@ const PUBLIC = [
    Guard global /api/*
    ========================= */
 app.use((req, res, next) => {
-  // Deja pasar preflights siempre (CORS)
   if (req.method === 'OPTIONS') return next();
-
   if (!req.path.startsWith('/api')) return next();
 
   const isPublic = PUBLIC.some(p => p.method === req.method && p.rx.test(req.path));
   if (isPublic) return next();
 
-  const token = extractToken(req);
-  if (!token) return res.status(401).json({ error: 'No autorizado' });
-
-  const payload = verifyJwt(token);
-  if (!payload) return res.status(401).json({ error: 'No autorizado' });
-
-  req.user = payload;
-  res.setHeader('X-Auth-User', payload.sub || payload.id || '');
-  return next();
+  // Aquí usamos el middleware directamente
+  verifyToken(req, res, () => {
+    // Opcional: mantener cabecera X-Auth-User
+    res.setHeader('X-Auth-User', req.user.sub || req.user.id || '');
+    next();
+  });
 });
+
 
 /* =========================
    Healthcheck

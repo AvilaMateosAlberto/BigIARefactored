@@ -83,9 +83,27 @@ a{ color:#2563eb; text-decoration:none; } a:hover{ text-decoration:underline; }
 .top-bar{ background:var(--topbar-bg); color:var(--topbar-fg); border-bottom:1px solid var(--border); }
 button{ font-family:inherit; }
 
-.login-page{
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
   background:
-    linear-gradient(0deg,rgba(0,0,0,0) 0%,rgba(0,0,0,0) 100%),
-    repeating-linear-gradient(45deg,transparent 0,transparent 24px,var(--login-stripe) 24px,var(--login-stripe) 48px),
-    var(--login-gradient);
+    radial-gradient(
+      circle at 25% 25%,
+      color-mix(in srgb, var(--brand) 12%, transparent),
+      transparent 70%
+    ),
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--bg) 96%, var(--surface) 4%) 0%,
+      color-mix(in srgb, var(--surface) 90%, var(--bg) 10%) 100%
+    ),
+    repeating-linear-gradient(
+      45deg,
+      transparent 0,
+      transparent 24px,
+      var(--login-stripe) 24px,
+      var(--login-stripe) 48px
+    );
+  background-blend-mode: normal, overlay, normal;
 }

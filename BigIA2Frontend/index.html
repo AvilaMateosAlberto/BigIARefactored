@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- ayuda a inputs/scrollbars en ambos temas -->
+    <meta name="color-scheme" content="light dark">
+    <link rel="icon" href="/logoBigIA.svg" />
+    <title>BigIA 2.0</title>
+    <script>
+      (function () {
+        try {
+          var root = document.documentElement;
+
+          // 1) Tema inicial: preferencia explícita > sistema
+          var savedTheme = localStorage.getItem("pref_theme"); // "light" | "dark" | null
+          var theme = savedTheme || (window.matchMedia &&
+                         window.matchMedia("(prefers-color-scheme: dark)").matches
+                         ? "dark" : "light");
+          root.setAttribute("data-theme", theme);
+
+          // 2) Color corporativo (marca) desde cache (si existe)
+          var brand = localStorage.getItem("brand_color"); // ej. "#c40000"
+          if (brand) root.style.setProperty("--brand", brand);
+
+          // 3) (Opcional) Texto de topbar desde cache público
+          var topbarText = localStorage.getItem("brand_topbar_text");
+          if (topbarText) document.title = topbarText;
+
+        } catch (e) { /* no romper render si falla algo */ }
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

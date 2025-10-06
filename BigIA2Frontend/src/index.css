@@ -1,0 +1,46 @@
+/* ===== Reset suave + cajas predecibles ===== */
+*, *::before, *::after { box-sizing: border-box; }
+
+/* ===== Fuentes y suavizado (lo tuyo) ===== */
+:root {
+  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ===== Layout a pantalla completa ===== */
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+#root {
+  width: 100%;
+  min-height: 100dvh; /* evita “gaps” en móviles */
+}
+
+/* ===== Colores base por tokens (lo tuyo) ===== */
+body {
+  min-width: 320px;
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* ===== Enlaces por tokens (lo tuyo) ===== */
+a { color: var(--link); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ===== Botones: heredan tipografía (lo tuyo) ===== */
+button { font-family: inherit; }
+
+/* ===== Imágenes y SVG fluidos ===== */
+img, svg { max-width: 100%; height: auto; display: block; }
+
+/* ===== Accesibilidad opcional ===== */
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}

@@ -1,0 +1,48 @@
+/* Full screen + reset básico ya lo metiste en index.css */
+
+.top-bar {
+  width: 100%;
+  background: var(--topbar-bg, #c40000);
+  color: var(--topbar-fg, #ffffff);
+  border-bottom: 1px solid var(--border, rgba(0,0,0,.08));
+}
+
+/* Barra más alta, título a la izquierda y más grande */
+.topbar-inner {
+  /* sin max-width: ocupa todo y se alinea a la izquierda */
+  padding: 16px 24px;         /* ↑ más alta */
+  font-weight: 700;
+  font-size: 20px;            /* ← más grande */
+  letter-spacing: .2px;
+}
+
+/* Fondo con rayas (usa tokens; añade fallbacks por si themes.css no aplica aún) */
+.login-page {
+  min-height: 100dvh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  background:
+    linear-gradient(0deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0) 100%),
+    repeating-linear-gradient(
+      45deg,
+      transparent 0,
+      transparent 24px,
+      var(--login-stripe, rgba(0, 0, 0, .035)) 24px,
+      var(--login-stripe, rgba(0, 0, 0, .035)) 48px
+    ),
+    var(--login-gradient, linear-gradient(135deg, #fafbff 0%, #eef2f7 100%));
+}
+
+/* Centro el formulario */
+.login-container {
+  flex: 1;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+@media (max-width: 480px) {
+  .topbar-inner { padding: 14px 16px; font-size: 18px; }
+  .login-container { padding: 16px; }
+}

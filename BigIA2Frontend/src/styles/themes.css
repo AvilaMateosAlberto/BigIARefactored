@@ -1,0 +1,91 @@
+/* ====== CAPA 0: saneado mínimo ====== */
+*,*::before,*::after{ box-sizing:border-box; }
+html,body,#root{ height:100%; margin:0; padding:0; }
+
+/* ====== CAPA 1: PRIMITIVOS LIGHT ====== */
+:root{
+  /* marca dinámica (se puede pisar desde index.html o luego por JS) */
+  --brand: #c40000;
+
+  /* escala gris clara */
+  --gray-0:#ffffff; --gray-1:#f6f7fb; --gray-2:#eef2f7; --gray-3:#e5e9f1;
+  --gray-4:#d8dee9; --gray-5:#cdd6e1; --gray-6:#8a94a6; --gray-7:#556070; --gray-8:#1d2433;
+
+  /* estados */
+  --blue-6:#2563eb;
+  --red-6: #dc3545;
+
+  /* semánticos base (light) */
+  --bg: var(--gray-1);
+  --surface: var(--gray-0);
+  --text: var(--gray-8);
+  --text-muted: var(--gray-7);
+  --border: var(--gray-4);
+
+  /* inputs */
+  --input-bg: var(--gray-0);
+  --input-text: #111111;
+  --input-border: var(--gray-5);
+  --input-focus: var(--blue-6);
+  --input-shadow: rgba(37,99,235,.25);
+  --input-placeholder: var(--gray-6);
+
+  /* topbar / primario derivados de la marca */
+  --topbar-bg: var(--brand);
+  --topbar-fg: #ffffff;
+  --primary: var(--brand);
+
+  /* login “glass” */
+  --login-gradient: linear-gradient(135deg,#fafbff 0%,#eef2f7 100%);
+  --login-stripe: rgba(0,0,0,.035);
+  --login-card-bg: rgba(255,255,255,.65);
+  --login-card-shadow: rgba(0,0,0,.12);
+
+  color-scheme: light;
+}
+
+/* ====== CAPA 1 (DARK) ====== */
+:root[data-theme="dark"]{
+  /* escala gris oscura */
+  --gray-0:#0f1318; --gray-1:#161a1f; --gray-2:#1b1e23; --gray-3:#20242a;
+  --gray-4:#2e333b; --gray-5:#313641; --gray-6:#a4aebe; --gray-7:#b3bccb; --gray-8:#e9edf4;
+
+  --bg: var(--gray-1);
+  --surface: var(--gray-2);
+  --text: var(--gray-8);
+  --text-muted: var(--gray-7);
+  --border: var(--gray-4);
+
+  --input-bg: var(--gray-1);
+  --input-text: var(--gray-8);
+  --input-border: var(--gray-5);
+  --input-focus: #95c0ff;
+  --input-shadow: rgba(149,192,255,.25);
+  --input-placeholder: var(--gray-6);
+
+  /* marca sigue siendo --brand, solo cambia el contexto */
+  --topbar-bg: var(--brand);
+  --topbar-fg: #ffffff;
+  --primary: var(--brand);
+
+  --login-gradient: linear-gradient(135deg,#121417 0%,#2a2f36 100%);
+  --login-stripe: rgba(255,255,255,.03);
+  --login-card-bg: rgba(255,255,255,.06);
+  --login-card-shadow: rgba(0,0,0,.5);
+
+  color-scheme: dark;
+}
+
+/* ====== CAPA 2: SEMÁNTICOS GLOBALES ====== */
+html,body,#root{ background:var(--bg); color:var(--text); }
+a{ color:#2563eb; text-decoration:none; } a:hover{ text-decoration:underline; }
+
+.top-bar{ background:var(--topbar-bg); color:var(--topbar-fg); border-bottom:1px solid var(--border); }
+button{ font-family:inherit; }
+
+.login-page{
+  background:
+    linear-gradient(0deg,rgba(0,0,0,0) 0%,rgba(0,0,0,0) 100%),
+    repeating-linear-gradient(45deg,transparent 0,transparent 24px,var(--login-stripe) 24px,var(--login-stripe) 48px),
+    var(--login-gradient);
+}

@@ -64,12 +64,13 @@ CREATE TABLE IF NOT EXISTS app_config (
 -- Datos iniciales
 -- ========================
 INSERT INTO roles (name, description) VALUES
-  ('user', "Acceso como usuario"),
-  ('admin', "Acceso como administrador")
+  ('user', 'Acceso como usuario'),
+  ('admin', 'Acceso como administrador')
 ON CONFLICT DO NOTHING;
 
 INSERT INTO permissions (name) VALUES
-  ('can_view_dashboards'),
+  ('can_view_user_dashboards'),
+  ('can_view_admin_dashboards'),
   ('can_view_reports'),
   ('can_view_users'),
   ('can_create_users'),
@@ -79,7 +80,7 @@ ON CONFLICT DO NOTHING;
 
 -- Plantilla de permisos
 INSERT INTO rol_permissions (role_id, permission_id)
-SELECT 1, id FROM permissions WHERE name IN ('can_view_dashboards','can_view_reports')
+SELECT 1, id FROM permissions WHERE name IN ('can_view_user_dashboards','can_view_reports')
 ON CONFLICT DO NOTHING;
 
 INSERT INTO rol_permissions (role_id, permission_id)
@@ -89,18 +90,27 @@ ON CONFLICT DO NOTHING;
 -- Usuario admin
 INSERT INTO users (username, password, role_id)
 SELECT 'admin', '$2b$10$J6q9SDwPzCDCODXyGUciX.hGd7P/siYBl/GGRj12QHFbqdc5xAT6u', id
-FROM roles WHERE nombre='admin'
+FROM roles WHERE name='admin'
 ON CONFLICT DO NOTHING;
 
 -- Menú inicial
-INSERT INTO menu_items (label, url, route, icon, position, nivel_requerido, type)
-VALUES
-  ('Inicio', 'https://www.geserisk.es/', '/inicio', 'Home', 1, 1, 'link'),
-  ('Reportes', '/revealjs/', '/reportes', 'BarChart', 2, 1, 'link'),
-  ('Configuración', NULL, NULL, 'Settings', 3, 2, 'folder')
-ON CONFLICT DO NOTHING;
-
+INSERT INTO public.menu_items
+(id, label, url, route, icon, "position", permission_id, type, parent_id) VALUES
+(1,  'Fortigate 100F', NULL, NULL, 'FireExtinguisher', 2, 1, 'folder', NULL),
+(3,  'Reportes', '/revealjs/', '/reportes', 'BarChart', 3, 2, 'link', NULL),
+(2,  'Kibana', '/kibana', '/kbmain', 'AutoAwesomeMosaicSharp', 4, 2, 'link', NULL),
+(9,  'SOAR', '/n8nsoar', '/soar', 'AutoFixHigh', 5, 2, 'link', NULL),
+(4,  'Configuración', NULL, NULL, 'Settings', 6, 2, 'folder', NULL),
+(14, 'FG100F Ingress Events', '/kibana/app/dashboards?auth_provider_hint=publicaccess#/view/4dbc62c0-831c-11f0-8232-87d9605708a2?embed=true&_g=%28refreshInterval%3A%28pause%3A%21t%2Cvalue%3A60000%29%2Ctime%3A%28from%3Anow-15m%2Cto%3Anow%29%29&show-query-input=true&show-time-filter=true', '/dashboards/fg100fingev', 'ArrowDownward', 4, 1, 'link', 1),
+(5,  'Gestor endpoints', NULL, '/configuracion/gestor-endpoints', 'Tune', 1, 7, 'link', 4),
+(6,  'Usuarios', NULL, '/configuracion/usuarios', 'People', 2, 4, 'link', 4),
+(7,  'Personalización', NULL, '/configuracion/personalizacion', 'Palette', 3, 2, 'link', 4),
+(8,  'Inicio', 'https://www.geserisk.es/', '/inicio', 'Home', 1, 1, 'link', NULL),
+(11, 'FG100F Events', '/kibana/app/dashboards?auth_provider_hint=publicaccess#/view/a0b097fb-5eab-4b6d-9155-8b83974087f8?embed=true&_g=%28refreshInterval%3A%28pause%3A%21t%2Cvalue%3A60000%29%2Ctime%3A%28from%3Anow-15m%2Cto%3Anow%29%29&show-query-input=true&show-time-filter=true', '/dashboards/fg100fevents', 'EmojiEvents', 2, 1, 'link', 1),
+(12, 'FG100F Egress Events', '/kibana/app/dashboards?auth_provider_hint=publicaccess#/view/263b7880-831c-11f0-8232-87d9605708a2?embed=true&_g=%28refreshInterval%3A%28pause%3A%21t%2Cvalue%3A60000%29%2Ctime%3A%28from%3Anow-15m%2Cto%3Anow%29%29&show-query-input=true&show-time-filter=true', '/dashboards/mfegressevents', 'ArrowUpward', 3, 1, 'link', 1),
+(10, 'Mashfrog Firewall Overview', '/kibana/app/dashboards?auth_provider_hint=publicaccess#/view/fortinet_fortigate-d0cd8230-0c8b-11ed-bb95-158df2ca77e4?embed=true&_g=%28refreshInterval%3A%28pause%3A%21t%2Cvalue%3A60000%29%2Ctime%3A%28from%3Anow-15m%2Cto%3Anow%29%29&show-query-input=true&show-time-filter=true', '/fortigate-100f/mfover', 'RemoveRedEyeOutlined', 1, 1, 'link', 1);
+ 
 -- Configuración app
-INSERT INTO app_config (id, topbar_color, theme_mode, topbar_text, document_title, login_message)
-VALUES (1, '#c40000', 'light', 'BigIA 2.0', 'BigIA 2.0', 'Acceso a BigIA 2.0')
+INSERT INTO app_config (id, topbar_color, topbar_text, document_title, login_message)
+VALUES (1, '#c40000', 'BigIA 2.0', 'BigIA 2.0', 'Acceso a BigIA 2.0')
 ON CONFLICT DO NOTHING;

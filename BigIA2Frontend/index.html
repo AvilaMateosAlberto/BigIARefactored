@@ -1,38 +1,51 @@
 <!doctype html>
 <html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <!-- ayuda a inputs/scrollbars en ambos temas -->
-    <meta name="color-scheme" content="light dark">
-    <link rel="icon" href="/logoBigIA.svg" />
-    <title>BigIA 2.0</title>
-    <script>
-      (function () {
-        try {
-          var root = document.documentElement;
 
-          // 1) Tema inicial: preferencia explícita > sistema
-          var savedTheme = localStorage.getItem("pref_theme"); // "light" | "dark" | null
-          var theme = savedTheme || (window.matchMedia &&
-                         window.matchMedia("(prefers-color-scheme: dark)").matches
-                         ? "dark" : "light");
-          root.setAttribute("data-theme", theme);
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- ayuda a inputs/scrollbars en ambos temas -->
+  <meta name="color-scheme" content="light dark">
+  <link rel="icon" href="/logoBigIA.svg" />
+  <title>BigIA 2.0</title>
+  <script>
+    (function () {
+      try {
+        var root = document.documentElement;
 
-          // 2) Color corporativo (marca) desde cache (si existe)
-          var brand = localStorage.getItem("brand_color"); // ej. "#c40000"
-          if (brand) root.style.setProperty("--brand", brand);
+        // 1) Tema inicial: preferencia explícita > sistema
+        var savedTheme = localStorage.getItem("pref_theme"); // "light" | "dark" | null
+        var media = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)");
+        var systemTheme = media && media.matches ? "dark" : "light";
+        var theme = savedTheme || systemTheme;
 
-          // 3) (Opcional) Texto de topbar desde cache público
-          var topbarText = localStorage.getItem("brand_topbar_text");
-          if (topbarText) document.title = topbarText;
+        root.setAttribute("data-theme", theme);
+        root.style.colorScheme = theme;
 
-        } catch (e) { /* no romper render si falla algo */ }
-      })();
-    </script>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+        // 2) Marca desde cache (si existe)
+        var brand = localStorage.getItem("brand_color");
+        if (brand) root.style.setProperty("--brand", brand);
+
+        // 3) (Opcional) Título/topbar desde cache público
+        var topbarText = localStorage.getItem("brand_topbar_text");
+        if (topbarText) document.title = topbarText;
+
+        // 4) Si no hay preferencia guardada, sigue cambios del sistema
+        if (!savedTheme && media && typeof media.addEventListener === 'function') {
+          media.addEventListener('change', function (e) {
+            var next = e.matches ? 'dark' : 'light';
+            root.setAttribute('data-theme', next);
+            root.style.colorScheme = next;
+          });
+        }
+      } catch (e) { /* noop */ }
+    })();
+  </script>
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.jsx"></script>
+</body>
+
 </html>

@@ -1,0 +1,154 @@
+/* --- Wrapper e input --- */
+.iconpicker {
+  position: relative;
+  width: 100%;
+  color: var(--text);
+}
+
+.iconpicker-inputrow {
+  display: grid;
+  grid-template-columns: 32px 1fr auto auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.iconpicker-preview {
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--input-border);
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  color: var(--text);
+  background: var(--surface);              /* ← claro en light, gris en dark */
+}
+.iconpicker-preview svg { color: currentColor; }
+.iconpicker-empty { opacity: 0.5; }
+
+.iconpicker-input {
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  color: var(--input-text);
+  width: 100%;
+}
+.iconpicker-input::placeholder { color: var(--input-placeholder); }
+.iconpicker-input:focus {
+  outline: none;
+  border-color: var(--input-focus);
+  box-shadow: 0 0 0 3px var(--input-shadow);
+}
+
+.iconpicker-btn,
+.iconpicker-clear {
+  background: var(--border);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background .15s ease, border .15s ease;
+}
+.iconpicker-btn:hover, .iconpicker-clear:hover {
+  background: var(--surface-2);
+  border-color: var(--border);
+}
+
+/* --- Popover --- */
+.iconpicker-popover {
+  position: absolute;
+  z-index: 9999;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+
+  background: var(--surface);              /* ← antes negro */
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 10px 30px var(--shadow-md);
+  display: flex;
+  flex-direction: column;
+  max-height: 520px;
+}
+
+.iconpicker-searchrow {
+  padding: 10px;
+  border-bottom: 1px solid var(--border);
+}
+.iconpicker-search {
+  width: 100%;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  color: var(--input-text);
+}
+.iconpicker-search::placeholder { color: var(--input-placeholder); }
+.iconpicker-search:focus {
+  outline: none;
+  border-color: var(--input-focus);
+  box-shadow: 0 0 0 3px var(--input-shadow);
+}
+
+/* --- Grid de iconos --- */
+.iconpicker-grid {
+  padding: 10px;
+  overflow: auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 8px;
+  grid-auto-rows: minmax(40px, auto);
+}
+
+.iconpicker-item {
+  -webkit-appearance: none;
+  appearance: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-sizing: border-box;
+  min-height: 40px;
+  padding: 8px 10px;
+
+  background: var(--surface);              /* ← blanco/claro */
+  border: 1px solid var(--input-border);
+  border-radius: 10px;
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  line-height: 1.2;
+  transition: background .15s ease, border-color .15s ease;
+}
+.iconpicker-item:hover {
+  background: var(--surface-2);            /* hover leve */
+  border-color: var(--input-border);
+}
+.iconpicker-item.selected {
+  outline: 1px solid var(--link);
+  background: var(--table-row-hover-bg);
+}
+
+.iconpicker-item svg {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
+  color: currentColor;
+  fill: currentColor;
+}
+.iconpicker-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 12px;
+  line-height: 1.2;
+}
+
+.iconpicker-emptyresult {
+  padding: 20px;
+  text-align: center;
+  color: var(--text-muted);
+}

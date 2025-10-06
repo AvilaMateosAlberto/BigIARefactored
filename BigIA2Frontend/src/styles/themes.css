@@ -1,28 +1,31 @@
-/* ====== CAPA 0: saneado mínimo ====== */
-*,*::before,*::after{ box-sizing:border-box; }
-html,body,#root{ height:100%; margin:0; padding:0; }
+/* ====== CAPA 0: SANEADO MÍNIMO ====== */
+*, *::before, *::after { box-sizing: border-box; }
+html, body, #root { height: 100%; margin: 0; padding: 0; }
 
 /* ====== CAPA 1: PRIMITIVOS LIGHT ====== */
-:root{
-  /* marca dinámica (se puede pisar desde index.html o luego por JS) */
+:root {
+  /* Marca dinámica (pisable desde index.html o JS) */
   --brand: #c40000;
 
-  /* escala gris clara */
+  /* Escala gris clara */
   --gray-0:#ffffff; --gray-1:#f6f7fb; --gray-2:#eef2f7; --gray-3:#e5e9f1;
   --gray-4:#d8dee9; --gray-5:#cdd6e1; --gray-6:#8a94a6; --gray-7:#556070; --gray-8:#1d2433;
 
-  /* estados */
+  /* Estados */
   --blue-6:#2563eb;
-  --red-6: #dc3545;
+  --red-6:#dc3545;
 
-  /* semánticos base (light) */
+  /* Semánticos base (light) */
   --bg: var(--gray-1);
   --surface: var(--gray-0);
   --text: var(--gray-8);
   --text-muted: var(--gray-7);
   --border: var(--gray-4);
 
-  /* inputs */
+  /* 🔹 Enlaces */
+  --link: var(--blue-6);
+
+  /* Inputs */
   --input-bg: var(--gray-0);
   --input-text: #111111;
   --input-border: var(--gray-5);
@@ -30,12 +33,12 @@ html,body,#root{ height:100%; margin:0; padding:0; }
   --input-shadow: rgba(37,99,235,.25);
   --input-placeholder: var(--gray-6);
 
-  /* topbar / primario derivados de la marca */
+  /* Topbar / primario derivados de la marca */
   --topbar-bg: var(--brand);
   --topbar-fg: #ffffff;
   --primary: var(--brand);
 
-  /* login “glass” */
+  /* Login “glass” */
   --login-gradient: linear-gradient(135deg,#fafbff 0%,#eef2f7 100%);
   --login-stripe: rgba(0,0,0,.035);
   --login-card-bg: rgba(255,255,255,.65);
@@ -45,8 +48,8 @@ html,body,#root{ height:100%; margin:0; padding:0; }
 }
 
 /* ====== CAPA 1 (DARK) ====== */
-:root[data-theme="dark"]{
-  /* escala gris oscura */
+:root[data-theme="dark"] {
+  /* Escala gris oscura */
   --gray-0:#0f1318; --gray-1:#161a1f; --gray-2:#1b1e23; --gray-3:#20242a;
   --gray-4:#2e333b; --gray-5:#313641; --gray-6:#a4aebe; --gray-7:#b3bccb; --gray-8:#e9edf4;
 
@@ -63,11 +66,15 @@ html,body,#root{ height:100%; margin:0; padding:0; }
   --input-shadow: rgba(149,192,255,.25);
   --input-placeholder: var(--gray-6);
 
-  /* marca sigue siendo --brand, solo cambia el contexto */
+  /* Marca sigue siendo --brand, solo cambia el contexto */
   --topbar-bg: var(--brand);
   --topbar-fg: #ffffff;
   --primary: var(--brand);
 
+  /* 🔹 Enlaces en dark */
+  --link: #95c0ff;
+
+  /* Login */
   --login-gradient: linear-gradient(135deg,#121417 0%,#2a2f36 100%);
   --login-stripe: rgba(255,255,255,.03);
   --login-card-bg: rgba(255,255,255,.06);
@@ -77,12 +84,23 @@ html,body,#root{ height:100%; margin:0; padding:0; }
 }
 
 /* ====== CAPA 2: SEMÁNTICOS GLOBALES ====== */
-html,body,#root{ background:var(--bg); color:var(--text); }
-a{ color:#2563eb; text-decoration:none; } a:hover{ text-decoration:underline; }
+html, body, #root { background: var(--bg); color: var(--text); }
 
-.top-bar{ background:var(--topbar-bg); color:var(--topbar-fg); border-bottom:1px solid var(--border); }
-button{ font-family:inherit; }
+/* 🔹 Enlaces */
+a { color: var(--link); text-decoration: none; }
+a:hover { text-decoration: underline; }
 
+/* Topbar */
+.top-bar {
+  background: var(--topbar-bg);
+  color: var(--topbar-fg);
+  border-bottom: 1px solid var(--border);
+}
+
+/* Botones base */
+button { font-family: inherit; }
+
+/* ====== LOGIN BACKGROUND ====== */
 .login-page {
   min-height: 100vh;
   display: flex;

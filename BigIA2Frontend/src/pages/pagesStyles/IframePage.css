@@ -1,0 +1,39 @@
+/* ====== CONFIG ====== */
+/* Ajusta si la topbar cambia de altura */
+:root { --topbar-h: 68px; }
+
+/* ====== IFRAME PAGE ====== */
+
+/* El contenedor ocupa todo el espacio visible bajo la topbar */
+.iframe-container {
+  position: relative;
+  width: 100%;
+  height: calc(100vh - var(--topbar-h));
+  margin: 0;
+  padding: 0;
+  overflow: hidden; /* evita doble scroll */
+  background: var(--surface);
+  border: 0;
+}
+
+/* El iframe rellena el contenedor al 100% */
+.iframe-embedded {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+/* ====== ESTADO VACÍO ====== */
+.iframe-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: calc(100vh - var(--topbar-h));
+  background: var(--surface);
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  font-style: italic;
+}

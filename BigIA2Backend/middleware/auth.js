@@ -17,30 +17,20 @@ function verifyToken(req, res, next) {
   }
 }
 
-// Middleware de autorización por nivel mínimo
-function authorizeMinLevel(minLevel = 1) {
-  return (req, res, next) => {
-    const level = Number(req.user?.level ?? 0);
-    if (Number.isNaN(level) || level < minLevel) {
-      return res.status(403).json({ error: 'Prohibido' });
-    }
-    next();
-  };
-}
-
-// (Opcional) Autorización por permiso nominal, por si lo usas en otras rutas
+// Autorización por permiso nominal
+// Verifica que el rol del usuario que lanza la petición tenga el permiso permission Name
 function authorizePermission(permissionName) {
+  // TO-DO
   return (req, res, next) => {
-    const perms = Array.isArray(req.user?.permissions) ? req.user.permissions : [];
-    if (!perms.includes(permissionName)) {
-      return res.status(403).json({ error: 'Prohibido' });
-    }
+    // const perms = Array.isArray(req.user?.permissions) ? req.user.permissions : [];
+    // if (!perms.includes(permissionName)) {
+    //   return res.status(403).json({ error: 'Prohibido' });
+    // }
     next();
   };
 }
 
 module.exports = {
   verifyToken,
-  authorizeMinLevel,
   authorizePermission,
 };

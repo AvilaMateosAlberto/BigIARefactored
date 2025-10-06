@@ -4,7 +4,7 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const crypto = require('crypto');
 const pool = require('../db');
-const { verifyToken, authorizeMinLevel } = require('../middleware/auth');
+const { verifyToken, authorizePermission } = require('../middleware/auth');
 
 /* =========================
    Secrets & TTLs
@@ -17,20 +17,16 @@ const REFRESH_TTL_SEC = parseInt(process.env.REFRESH_TOKEN_TTL_SEC || '2592000',
 /* =========================
    Helpers de permisos/menú
    ========================= */
-async function getPermissionsByLevel(level) {
+async function getPermissionsByRol(role_id) {
   const res = await pool.query(
-    `SELECT p.name
-     FROM nivel_permisos np
-     JOIN permissions p ON p.id = np.permission_id
-     WHERE np.nivel = $1
-     ORDER BY p.name`,
+    `SELECT p.name from rol_permissions rp join permissions p on p.id = rp.permission_id where rp.role_id = $1`,
     [level]
   );
   return res.rows.map(r => r.name);
 }
 
 // Construye menú EN ÁRBOL filtrado por nivel
-async function getMenuByLevel(level) {
+async function getMenuByRol(role_id) {
   const { rows } = await pool.query(
     `SELECT id, label, url, route, icon, position, type, parent_id
      FROM menu_items
@@ -342,7 +338,7 @@ router.get('/me', verifyToken, async (req, res) => {
 /* =========================
    👥 Gestión de usuarios (nivel ≥ 2)
    ========================= */
-router.get('/users', verifyToken, authorizeMinLevel(2), async (_req, res) => {
+router.get('/users', verifyToken, authorizePermission("can_view_users"), async (_req, res) => {
   try {
     const result = await pool.query(`
       SELECT u.id, u.username, u.icon, r.nombre AS role, r.nivel AS level
@@ -357,7 +353,7 @@ router.get('/users', verifyToken, authorizeMinLevel(2), async (_req, res) => {
   }
 });
 
-router.post('/users', verifyToken, authorizeMinLevel(2), async (req, res) => {
+router.post('/users', verifyToken, authorizePermission("can_create_users"), async (req, res) => {
   const { username, password, role } = req.body;
   if (!username || !password || !role) {
     return res.status(400).json({ error: 'Faltan campos obligatorios' });
@@ -386,7 +382,7 @@ router.post('/users', verifyToken, authorizeMinLevel(2), async (req, res) => {
   }
 });
 
-router.delete('/users/:id', verifyToken, authorizeMinLevel(2), async (req, res) => {
+router.delete('/users/:id', verifyToken, authorizePermission("can_delete_users"), async (req, res) => {
   const { id } = req.params;
   try {
     const userRes = await pool.query('SELECT * FROM users WHERE id = $1', [id]);

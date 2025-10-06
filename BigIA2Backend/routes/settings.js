@@ -2,11 +2,10 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../db');
-const { verifyToken, authorizeMinLevel } = require('../middleware/auth');
+const { verifyToken, authorizePermission } = require('../middleware/auth');
 
 const DEFAULTS = {
   topbar_color: '#c40000',
-  theme_mode: 'light',
   topbar_text: 'BigIA 2.0',
   document_title: 'BigIA 2.0',
   login_message: 'Acceso a BigIA 2.0',
@@ -15,13 +14,12 @@ const DEFAULTS = {
 // Extrae la configuración de la aplicación de base de datos
 async function getAppConfig() {
   const { rows } = await pool.query(
-    `SELECT topbar_color, theme_mode, topbar_text, document_title, login_message
+    `SELECT topbar_color, topbar_text, document_title, login_message
      FROM app_config WHERE id = 1`
   );
   const cfg = rows[0] || DEFAULTS;
   return {
     topbar_color: isHex(cfg.topbar_color) ? cfg.topbar_color : DEFAULTS.topbar_color,
-    theme_mode: cfg.theme_mode === 'dark' ? 'dark' : 'light',
     topbar_text: clampStr(cfg.topbar_text, 60) || DEFAULTS.topbar_text,
     document_title: clampStr(cfg.document_title, 60) || DEFAULTS.document_title,
     login_message: clampStr(cfg.login_message, 120) || DEFAULTS.login_message,
@@ -43,7 +41,7 @@ router.get('/public', async (_req, res) => {
 });
 
 // ====== PRIVADO (admin) ======
-router.get('/', verifyToken, authorizeMinLevel(2), async (_req, res) => {
+router.get('/', verifyToken, authorizePermission('can_view_admin_dashboards'), async (_req, res) => {
   try {
     res.json(await getAppConfig());
   } catch (e) {
@@ -51,18 +49,16 @@ router.get('/', verifyToken, authorizeMinLevel(2), async (_req, res) => {
     res.status(500).json({ error: 'settings_read_failed' });
   }
 });
-router.put('/', verifyToken, authorizeMinLevel(2), async (req, res) => {
+router.put('/', verifyToken, authorizePermission('can_view_admin_dashboards'), async (req, res) => {
   try {
     const {
       topbar_color,
-      theme_mode,
       topbar_text,
       document_title,
       login_message,
     } = req.body || {};
 
     const color = isHex(topbar_color) ? topbar_color : DEFAULTS.topbar_color;
-    const theme = theme_mode === 'dark' ? 'dark' : 'light';
     const text = clampStr(topbar_text, 60) || DEFAULTS.topbar_text;
     const title = clampStr(document_title, 60) || DEFAULTS.document_title;
     const loginMsg = clampStr(login_message, 120) || DEFAULTS.login_message;
@@ -70,12 +66,11 @@ router.put('/', verifyToken, authorizeMinLevel(2), async (req, res) => {
     const { rows } = await pool.query(
       `UPDATE app_config
          SET topbar_color = $1,
-             theme_mode = $2,
-             topbar_text = $3,
-             document_title = $4,
-             login_message = $5
+             topbar_text = $2,
+             document_title = $3,
+             login_message = $4
        WHERE id = 1
-       RETURNING topbar_color, theme_mode, topbar_text, document_title, login_message`,
+       RETURNING topbar_color, topbar_text, document_title, login_message`,
       [color, theme, text, title, loginMsg]
     );
 

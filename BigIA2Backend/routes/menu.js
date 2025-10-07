@@ -2,7 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../db');
-const { verifyToken, authorizeMinLevel } = require('../middleware/auth');
+const { verifyToken, authorizePermission } = require('../middleware/auth');
 
 // Helpers
 function normalizeRoute(route) {
@@ -96,7 +96,7 @@ async function rebuildDescendantLinkRoutes(folderId) {
 }
 
 // ============ LISTAR ============
-router.get('/', verifyToken, authorizeMinLevel(2), async (_req, res) => {
+router.get('/', verifyToken, authorizePermission("can_manage_endpoints"), async (_req, res) => {
   try {
     const { rows } = await pool.query(
       `SELECT id, label, url, route, icon, position, nivel_requerido, type, parent_id
@@ -111,7 +111,7 @@ router.get('/', verifyToken, authorizeMinLevel(2), async (_req, res) => {
 });
 
 // ============ CREAR ============
-router.post('/', verifyToken, authorizeMinLevel(2), async (req, res) => {
+router.post('/', verifyToken, authorizePermission("can_manage_endpoints"), async (req, res) => {
   try {
     let { label, url, route, icon, nivel_requerido, type, parent_id } = req.body;
     if (!label) return res.status(400).json({ error: 'Falta "label"' });
@@ -162,7 +162,7 @@ router.post('/', verifyToken, authorizeMinLevel(2), async (req, res) => {
 });
 
 // ============ REORDENAR (multi-nivel) ============
-router.put('/reorder', verifyToken, authorizeMinLevel(2), async (req, res) => {
+router.put('/reorder', verifyToken, authorizePermission("can_manage_endpoints"), async (req, res) => {
   const client = await pool.connect();
   try {
     const { items } = req.body;
@@ -252,7 +252,7 @@ router.put('/reorder', verifyToken, authorizeMinLevel(2), async (req, res) => {
 });
 
 // ============ ACTUALIZAR ============
-router.put('/:id', verifyToken, authorizeMinLevel(2), async (req, res) => {
+router.put('/:id', verifyToken, authorizePermission("can_manage_endpoints"), async (req, res) => {
   try {
     const { id } = req.params;
     let { label, url, route, icon, nivel_requerido, type, parent_id } = req.body;
@@ -356,7 +356,7 @@ router.put('/:id', verifyToken, authorizeMinLevel(2), async (req, res) => {
 });
 
 // ============ ELIMINAR ============
-router.delete('/:id', verifyToken, authorizeMinLevel(2), async (req, res) => {
+router.delete('/:id', verifyToken, authorizePermission("can_manage_endpoints"), async (req, res) => {
   try {
     const { id } = req.params;
 

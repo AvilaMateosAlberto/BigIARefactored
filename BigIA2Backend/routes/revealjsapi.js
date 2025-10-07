@@ -2,7 +2,7 @@
 const express = require("express");
 const multer = require("multer");
 const FormData = require("form-data");
-const { verifyToken, authorizeMinLevel } = require("../middleware/auth");
+const { verifyToken, authorizePermission } = require("../middleware/auth");
 
 const router = express.Router();
 
@@ -73,7 +73,7 @@ const pickLogoFile = (req) => {
 
 // ====== Rutas proxy ======
 
-router.get(["/assets/*", "/assets/*/"], verifyToken, authorizeMinLevel(1), async (req, res) => {
+router.get(["/assets/*", "/assets/*/"], verifyToken, authorizePermission("can_view_reports"), async (req, res) => {
   if (!IS_CONFIGURED) return notConfigured(res);
   try {
     const tail = (req.params[0] || "").replace(/\/+$/, "");
@@ -86,7 +86,7 @@ router.get(["/assets/*", "/assets/*/"], verifyToken, authorizeMinLevel(1), async
   }
 });
 
-router.get(["/get_client_info", "/get_client_info/"], verifyToken, authorizeMinLevel(1), async (req, res) => {
+router.get(["/get_client_info", "/get_client_info/"], verifyToken, authorizePermission("can_view_reports"), async (req, res) => {
   if (!IS_CONFIGURED) return notConfigured(res);
   try {
     const upstreamRes = await fetch(`${UPSTREAM}/get_client_info`, {
@@ -103,7 +103,7 @@ router.get(["/get_client_info", "/get_client_info/"], verifyToken, authorizeMinL
 router.post(
   ["/update_client_info", "/update_client_info/"],
   verifyToken,
-  authorizeMinLevel(2),
+  authorizePermission("can_view_admin_dashboards"),
   uploadLogoFields,
   async (req, res) => {
     if (!IS_CONFIGURED) return notConfigured(res);
@@ -136,7 +136,7 @@ router.post(
   }
 );
 
-router.post(["/generate_report", "/generate_report/"], verifyToken, authorizeMinLevel(1), async (req, res) => {
+router.post(["/generate_report", "/generate_report/"], verifyToken, authorizePermission("can_view_reports"), async (req, res) => {
   if (!IS_CONFIGURED) return notConfigured(res);
   try {
     const upstreamRes = await fetch(`${UPSTREAM}/generate_report`, {
@@ -151,7 +151,7 @@ router.post(["/generate_report", "/generate_report/"], verifyToken, authorizeMin
   }
 });
 
-router.post(["/generate_pdf", "/generate_pdf/"], verifyToken, authorizeMinLevel(1), async (req, res) => {
+router.post(["/generate_pdf", "/generate_pdf/"], verifyToken, authorizePermission("can_view_reports"), async (req, res) => {
   if (!IS_CONFIGURED) return notConfigured(res);
   try {
     const upstreamRes = await fetch(`${UPSTREAM}/generate_pdf`, {
@@ -166,7 +166,7 @@ router.post(["/generate_pdf", "/generate_pdf/"], verifyToken, authorizeMinLevel(
   }
 });
 
-router.head(["/pdf_status", "/pdf_status/"], verifyToken, authorizeMinLevel(1), async (req, res) => {
+router.head(["/pdf_status", "/pdf_status/"], verifyToken, authorizePermission("can_view_reports"), async (req, res) => {
   if (!IS_CONFIGURED) return notConfigured(res);
   try {
     const upstreamRes = await fetch(`${UPSTREAM}/pdf_status`, { method: "HEAD", headers: buildForwardHeaders(req) });
@@ -176,7 +176,7 @@ router.head(["/pdf_status", "/pdf_status/"], verifyToken, authorizeMinLevel(1), 
   }
 });
 
-router.get(["/pdf_status", "/pdf_status/"], verifyToken, authorizeMinLevel(1), async (req, res) => {
+router.get(["/pdf_status", "/pdf_status/"], verifyToken, authorizePermission("can_view_reports"), async (req, res) => {
   if (!IS_CONFIGURED) return notConfigured(res);
   try {
     const upstreamRes = await fetch(`${UPSTREAM}/pdf_status`, {
@@ -189,7 +189,7 @@ router.get(["/pdf_status", "/pdf_status/"], verifyToken, authorizeMinLevel(1), a
   }
 });
 
-router.get(["/download_report", "/download_report/"], verifyToken, authorizeMinLevel(1), async (req, res) => {
+router.get(["/download_report", "/download_report/"], verifyToken, authorizePermission("can_view_reports"), async (req, res) => {
   if (!IS_CONFIGURED) return notConfigured(res);
   try {
     const upstreamRes = await fetch(`${UPSTREAM}/download_report`, {

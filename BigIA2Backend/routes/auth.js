@@ -80,7 +80,7 @@ function buildCookieOptions() {
     maxAge: REFRESH_TTL_SEC * 1000,
   };
 
-  // Solo aplica domain si parece FQDN (no IP/localhost)
+  // Solo aplica domain si parece FQDN (no IP/localhost) 
   const dom = (process.env.COOKIE_DOMAIN || '').trim();
   const isIp = /^\d{1,3}(\.\d{1,3}){3}$/.test(dom);
   const looksFqdn = dom && dom.includes('.') && !isIp && dom.toLowerCase() !== 'localhost';

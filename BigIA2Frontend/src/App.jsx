@@ -1,37 +1,54 @@
 // src/App.jsx
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import "./styles/themes.css";
 import "./App.css";
 
 import LoginForm from "./pages/LoginForm";
-import Layout from "./components/Layout";       // tus componentes
-import Topbar from "./components/Topbar";       // (Layout ya lo usa)
-import Sidebar from "./components/Sidebar";     // (Layout ya lo usa)
+import Layout from "./components/Layout";
 import DynamicRouteRenderer from "./pages/DynamicRouteRenderer";
 
-// Páginas placeholder (creadas más abajo)
+// Páginas placeholder
 import HomePage from "./pages/HomePage";
 import SettingsPage from "./pages/SettingsPage";
 import EndpointsManager from "./pages/EndpointsManager";
 
-// --- Topbar actions (toggle tema + user + logout) ---
+// Iconos
 import IconResolver from "./components/IconResolver";
-import { setTheme } from "./utils/themeClient";       // si aún no lo tienes, puedes quitar esto
-// Si no tienes themeClient todavía, comenta la línea de setTheme y cambia toggleTheme a sólo localStorage.
+
+/* ============== TopbarActions ============== */
+function applyTheme(next) {
+  const root = document.documentElement;
+  root.setAttribute("data-theme", next);
+  root.style.colorScheme = next;
+  localStorage.setItem("pref_theme", next);
+}
 
 function TopbarActions() {
   const navigate = useNavigate();
-  const pref = (localStorage.getItem("pref_theme") || "light");
+
+  // Tema inicial desde DOM o localStorage
+  const getInitialTheme = () =>
+    document.documentElement.getAttribute("data-theme") ||
+    localStorage.getItem("pref_theme") ||
+    "light";
+
+  const [theme, setTheme] = useState(getInitialTheme);
+
+  // Observa cambios externos en data-theme (por si otro script lo cambia)
+  useEffect(() => {
+    const obs = new MutationObserver(() => {
+      const t = document.documentElement.getAttribute("data-theme");
+      if (t && t !== theme) setTheme(t);
+    });
+    obs.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+    return () => obs.disconnect();
+  }, [theme]);
 
   const toggleTheme = () => {
-    const next = pref === "light" ? "dark" : "light";
-    try { setTheme(next); } catch {}
-    localStorage.setItem("pref_theme", next);
-    // fuerza un repaint rápido
-    const root = document.documentElement;
-    root.setAttribute("data-theme", next);
-    root.style.colorScheme = next;
+    const next = theme === "light" ? "dark" : "light";
+    applyTheme(next);
+    setTheme(next); // fuerza re-render del icono
   };
 
   const logout = () => {
@@ -41,10 +58,9 @@ function TopbarActions() {
 
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-      <button className="icon-btn" onClick={toggleTheme} title="Cambiar tema" style={{ background:"transparent", border:0, cursor:"pointer" }}>
-        <IconResolver name={pref === "light" ? "moon" : "sun"} size={18} />
+      <button className="icon-btn" onClick={toggleTheme} title={`Cambiar a ${theme === "light" ? "oscuro" : "claro"}`} style={{ background:"transparent", border:0, cursor:"pointer" }}>
+        <IconResolver name={theme === "light" ? "moon" : "sun"} size={18} />
       </button>
-      <span aria-label="Usuario" title="Usuario"><IconResolver name="user" size={18} /></span>
       <button className="icon-btn" onClick={logout} title="Salir" style={{ background:"transparent", border:0, cursor:"pointer" }}>
         <IconResolver name="logout" size={18} />
       </button>
@@ -52,7 +68,7 @@ function TopbarActions() {
   );
 }
 
-// --- Menú demo mientras llega el backend ---
+/* ============== Menú demo ============== */
 const demoMenu = [
   { id: "home", type: "page", label: "Inicio", route: "/home", icon: "home" },
   {
@@ -87,24 +103,20 @@ const demoMenu = [
   { id: "settings", type: "page", label: "Ajustes", route: "/settings", icon: "cog" },
 ];
 
-
-// --- Guard muy simple con localStorage ---
+/* ============== Guard sencillo ============== */
 function RequireAuth({ children }) {
   const user = JSON.parse(localStorage.getItem("user") || "null");
   if (!user) return <Navigate to="/login" replace />;
   return children;
 }
 
-// --- LoginLayout: envuelve TU LoginForm y captura el submit (sin tocar LoginForm) ---
+/* ============== Login wrapper ============== */
 function LoginLayout() {
   const navigate = useNavigate();
 
   const handleSubmitCapture = (e) => {
-    // Si el hijo hace preventDefault, el submit sigue propagando.
     if (e.type === "submit") {
-      // demo login: guardamos usuario y navegamos
       const form = e.target;
-      // opcional: leer el username del input para simular usuario
       const userInput = form.querySelector('input[name="username"]');
       const username = userInput ? userInput.value : "dev";
       localStorage.setItem("user", JSON.stringify({ username }));
@@ -124,29 +136,26 @@ function LoginLayout() {
   );
 }
 
-// --- AppShell: usa tu Layout con Topbar/Sidebar y acciones a la derecha ---
+/* ============== AppShell ============== */
 function AppShell() {
   return (
     <Layout title="BigIA 2.0" menu={demoMenu} rightSlot={<TopbarActions />}>
-      {/* Layout renderiza <Outlet />, las rutas están abajo */}
+      {/* Layout renderiza <Outlet /> */}
     </Layout>
   );
 }
 
+/* ============== App ============== */
 export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Login público (tu UI intacta) */}
         <Route path="/login" element={<LoginLayout />} />
-
-        {/* App protegida */}
         <Route element={<RequireAuth><AppShell /></RequireAuth>}>
           <Route path="/" element={<Navigate to="/home" replace />} />
           <Route path="/home" element={<HomePage />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/endpoints" element={<EndpointsManager />} />
-          {/* Cualquier otra ruta: si en el menú existe y tiene url, la resolverá DynamicRouteRenderer */}
           <Route path="*" element={<DynamicRouteRenderer />} />
         </Route>
       </Routes>

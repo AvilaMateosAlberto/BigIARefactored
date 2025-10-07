@@ -1,25 +1,285 @@
-/* Ancho fluido de ~20–30% y límites cómodos */
+/* ============================
+   Sidebar (contenedor) + Árbol
+   ============================ */
+
+/* Sidebar off-canvas: oculto por defecto */
 .sidebar {
   width: clamp(180px, 20vw, 280px);
   background: var(--surface);
   color: var(--text);
   border-right: 1px solid var(--border);
-  height: 100vh;
-  position: sticky;
-  top: 0;
+
+
+  position: fixed;
+  left: 0;
+  top: var(--topbar-h);
+  height: calc(100svh - var(--topbar-h));
+
+  transform: translateX(-100%);
+  transition: transform .22s ease;
+  z-index: 30;
 }
 
-/* Móvil off-canvas (igual que tenías, solo ajusto ancho) */
-@media (max-width: 960px) {
-  .sidebar {
-    position: fixed;
-    left: 0;
-    top: 56px; /* altura de topbar */
-    height: calc(100vh - 56px);
-    transform: translateX(-100%);
-    transition: transform .2s ease;
-    z-index: 30;
-    width: min(86vw, 480px);
+/* Mostrar cuando está abierto (desktop y móvil) */
+.sidebar.is-open {
+  transform: translateX(0);
+}
+
+.sidebar-scroll {
+  height: 100%;
+  overflow: auto;
+}
+
+/* Backdrop cuando el sidebar está abierto */
+.sidebar-backdrop {
+  position: fixed;
+  inset: var(--topbar-h) 0 0 0;
+  background: rgba(0, 0, 0, .28);
+  backdrop-filter: blur(1px);
+  z-index: 20;
+}
+
+/* ============================
+   Árbol
+   ============================ */
+
+.st-tree {
+  padding: 18px 8px 8px;
+
+  /* constantes compartidas (coherentes con el grid) */
+  --indent-step: 16px;
+  --row-pad-left: 12px;
+  --chev-w: 16px;
+  /* columna chevron */
+  --icon-w: 22px;
+  /* columna icono */
+}
+
+.st-node {
+  position: relative;
+}
+
+/* Fila */
+.st-row {
+  --indent: calc(var(--indent-step) * var(--depth, 0));
+
+  display: grid;
+  grid-template-columns: var(--chev-w) var(--icon-w) 1fr auto;
+  align-items: center;
+  gap: 8px;
+
+  padding: 8px 10px;
+  padding-left: calc(var(--row-pad-left) + var(--indent));
+  border-radius: var(--radius, 12px);
+  border: 1px solid transparent;
+
+  color: var(--text, #0f172a);
+  background: transparent;
+  cursor: pointer;
+  user-select: none;
+  position: relative;
+
+  transition: background .15s ease, border-color .15s ease, color .15s ease;
+}
+
+.st-row:hover {
+  background: color-mix(in srgb, var(--brand, #c40000) 10%, transparent);
+}
+
+.st-row.is-active {
+  background: color-mix(in srgb, var(--brand, #c40000) 16%, transparent);
+  color: var(--brand, #c40000);
+  border-color: color-mix(in srgb, var(--brand, #c40000) 35%, transparent);
+}
+
+/* Chevron SOLO en carpetas, centrado y con rotación desde el centro */
+.st-chevron {
+  width: 14px;
+  height: 14px;
+  display: inline-grid;
+  place-items: center;
+  line-height: 1;
+  font-size: 0;
+  /* oculta cualquier texto residual */
+  color: var(--text-muted, #6b7280);
+}
+
+.st-hidden {
+  visibility: hidden;
+}
+
+/* Triángulo por máscara, para rotar perfecto desde el centro */
+.st-chevron::before {
+  content: "";
+  width: 100%;
+  height: 100%;
+  background: currentColor;
+  -webkit-mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><polygon points="5,3 11,8 5,13"/></svg>');
+  mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><polygon points="5,3 11,8 5,13"/></svg>');
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  transform: rotate(0deg);
+  transform-origin: 50% 50%;
+  transition: transform .18s ease;
+}
+
+.st-chevron.rot::before {
+  transform: rotate(90deg);
+}
+
+/* Icono / Label / Badge */
+.st-icon {
+  display: inline-grid;
+  place-items: center;
+}
+
+.st-label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.st-badge {
+  margin-left: 8px;
+  background: color-mix(in srgb, var(--brand, #c40000) 16%, #0000);
+  color: var(--brand, #c40000);
+  border: 1px solid color-mix(in srgb, var(--brand, #c40000) 35%, #0000);
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 12px;
+}
+
+/* Grupo de hijos (usa la profundidad del padre para posicionar las líneas) */
+.st-children {
+  --parent-depth: var(--parent-depth, var(--depth, 0));
+  position: relative;
+
+  overflow: hidden;
+  height: 0;
+  transition: height .2s ease;
+}
+
+.st-children.open {
+  height: auto;
+}
+
+/* Línea vertical que nace del centro del icono del FOLDER padre */
+.st-children::before {
+  content: "";
+  position: absolute;
+  left: calc(var(--row-pad-left) + (var(--parent-depth, 0) * var(--indent-step)) + var(--chev-w) + (var(--icon-w) / 2));
+  top: 10px;
+  bottom: 10px;
+  width: 1px;
+  background: var(--border, rgba(0, 0, 0, .12));
+  opacity: .75;
+  pointer-events: none;
+}
+
+/* Conector horizontal hacia cada hijo */
+.st-children .st-row {
+  position: relative;
+}
+
+.st-children .st-row::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: calc(var(--row-pad-left) + (var(--parent-depth, 0) * var(--indent-step)) + var(--chev-w) + (var(--icon-w) / 2));
+  width: 12px;
+  height: 1px;
+  background: var(--border, rgba(0, 0, 0, .12));
+  transform: translateY(-50%);
+  pointer-events: none;
+  opacity: .75;
+}
+
+/* Leve fondo del bloque abierto (no tapa hover/active) */
+@media (prefers-color-scheme: light) {
+  .st-children.open {
+    background: color-mix(in srgb, var(--surface, #fff) 98%, var(--brand, #000) 2%);
   }
-  .sidebar.is-open { transform: translateX(0); }
+}
+
+@media (prefers-color-scheme: dark) {
+  .st-children.open {
+    background: color-mix(in srgb, var(--surface, #0b0f18) 96%, var(--brand, #fff) 3%);
+  }
+}
+
+/* Accesibilidad */
+.st-row:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--brand, #c40000) 55%, #ffffff);
+  outline-offset: 2px;
+}
+
+/* ===== Empuje del layout cuando el sidebar está abierto (desktop) ===== */
+.appshell {
+  transition: padding-left .22s ease;
+}
+
+/* Desktop: desplazamos toda la app (topbar + contenido) */
+@media (min-width: 961px) {
+
+  /* el sidebar se ve al abrir (transform 0) y no necesitamos backdrop */
+  .sidebar {
+    top: 56px;
+  }
+
+  /* por defecto, sin empuje */
+  .appshell {
+    padding-left: 0;
+  }
+
+  /* al abrir, empuja toda la UI exactamente el ancho del sidebar */
+  .appshell--sidebar-open {
+    padding-left: var(--sidebar-w);
+  }
+
+  /* como el sidebar ya ocupa su sitio a la izquierda, no necesitamos overlay */
+  .sidebar-backdrop {
+    display: none;
+  }
+}
+
+/* Móvil: seguimos con overlay, sin empuje */
+@media (max-width: 960px) {
+  .appshell {
+    padding-left: 0;
+  }
+
+  /* sin empujar en móvil */
+}
+
+/* ===== Empuje del contenido cuando el sidebar está abierto (solo desktop) ===== */
+.appshell-main {
+  transition: padding-left .22s ease;
+}
+
+/* Desktop: desplaza el área bajo la topbar; la topbar no se mueve */
+@media (min-width: 961px) {
+  .appshell-main {
+    padding-left: 0;
+  }
+
+  .appshell-main--shift {
+    padding-left: var(--sidebar-w);
+  }
+
+  .sidebar-backdrop {
+    display: none;
+  }
+
+  /* en desktop no hace falta */
+}
+
+/* Móvil: overlay sin empuje */
+@media (max-width: 960px) {
+  .appshell-main {
+    padding-left: 0;
+  }
 }

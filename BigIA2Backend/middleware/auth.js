@@ -12,7 +12,8 @@ function verifyToken(req, res, next) {
   try {
     req.user = jwt.verify(token, ACCESS_SECRET);
     next();
-  } catch {
+  } catch (err){
+    console.error('❌ JWT verification error:', err.message);
     return res.status(401).json({ error: 'Token inválido' });
   }
 }

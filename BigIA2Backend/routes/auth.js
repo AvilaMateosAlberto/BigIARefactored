@@ -194,10 +194,8 @@ async function rotateRefresh(oldRt, payload, req, res) {
 
   // Carga del usuario para el access
   const ures = await pool.query(
-    `SELECT u.id, u.username, u.icon, r.nombre AS role, r.nivel AS level
-     FROM users u
-     JOIN roles r ON u.role_id = r.id
-     WHERE u.id = $1`,
+    `SELECT id, username, icon, role_id FROM users
+     WHERE id = $1`,
     [userId]
   );
   const user = ures.rows[0];
@@ -232,7 +230,7 @@ router.post('/login', async (req, res) => {
       user: {
         id: user.id,
         username: user.username,
-        role: user.role,
+        role_id: user.role_id,
         icon: user.icon,
       },
       menu,
@@ -257,11 +255,10 @@ router.post('/refresh', async (req, res) => {
     catch { return res.status(401).json({ error: 'Refresh inválido' }); }
 
     const { accessToken, user } = await rotateRefresh(rt, payload, req, res);
-    clearLegacySessionCookie(res);
 
     // Devuelve TODO para hidratar de una
-    const menu = await getMenuByLevel(user.level);
-    const permissions = await getPermissionsByLevel(user.level);
+    const menu = await getMenuByRol(user.role_id);
+    const permissions = await getPermissionsByRol(user.role_id);
 
     res.json({ accessToken, user, menu, permissions });
   } catch (err) {
@@ -290,7 +287,6 @@ router.post('/logout', async (req, res) => {
     }
     const opts = buildCookieOptions(); delete opts.maxAge;
     res.clearCookie('rt', opts);
-    clearLegacySessionCookie(res);
     res.json({ ok: true });
   } catch (err) {
     console.error('❌ Error en /auth/logout:', err);
@@ -312,8 +308,8 @@ router.get('/me', verifyToken, async (req, res) => {
     const user = result.rows[0];
     if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
 
-    const menu = await getMenuByLevel(user.role_id);
-    const permissions = await getPermissionsByLevel(user.role_id);
+    const menu = await getMenuByRol(user.role_id);
+    const permissions = await getPermissionsByRol(user.role_id);
 
     res.json({ user, menu, permissions });
   } catch (err) {

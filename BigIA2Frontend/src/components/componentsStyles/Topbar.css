@@ -1,18 +1,102 @@
-.topbar {
-  display: flex; align-items: center; justify-content: space-between;
-  height: 56px; padding: 0 12px;
-  background: var(--topbar-bg, var(--brand)); color: var(--topbar-fg, #fff);
-  border-bottom: 1px solid var(--border);
+/* ==============================
+   Topbar - BigIA 2.0
+   ============================== */
+
+:root {
+  --topbar-h: 68px; /* altura global coherente */
 }
-.topbar-left { display: flex; align-items: center; gap: 10px; }
-.topbar-logo { width: 22px; height: 22px; display: block; }
-.topbar-title { font-weight: 600; letter-spacing: .2px; }
-.topbar-right { display: flex; align-items: center; gap: 12px; }
 
-/* Burger (visible en móviles) */
-.topbar-burger { display: none; background: transparent; border: 0; padding: 6px;
-  border-radius: 8px; cursor: pointer; outline-offset: 2px; color: var(--on-primary,#fff); }
-.topbar-burger:focus-visible { outline: 2px solid color-mix(in srgb, var(--brand) 60%, white); }
-.topbar-burger-line { display: block; width: 18px; height: 2px; margin: 3px 0; background: currentColor; border-radius: 2px; }
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
 
-@media (max-width: 960px) { .topbar-burger { display: inline-flex; } }
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  height: var(--topbar-h);
+  padding: 0 20px; /* padding lateral general */
+  background: var(--topbar-bg, var(--brand, #c40000));
+  color: var(--topbar-fg, #fff);
+  border-bottom: 1px solid color-mix(in srgb, #000 15%, transparent);
+}
+
+/* Izquierda: hamburguesa + título alineados */
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  /* Desplazamiento adicional para que coincida con tu original */
+  margin-left: 6px; /* suma 20px + 6px = 26px reales de espacio total */
+}
+
+/* Botón hamburguesa */
+.topbar-burger {
+  display: inline-grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: none;
+  color: currentColor;
+  border: none;
+  cursor: pointer;
+  outline-offset: 2px;
+  transition: background .15s ease, transform .05s ease;
+}
+.topbar-burger:hover {
+  background: color-mix(in srgb, #fff 18%, transparent);
+}
+.topbar-burger:active {
+  transform: translateY(1px);
+}
+.topbar-burger:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--brand) 60%, #fff);
+}
+
+/* Líneas de la hamburguesa */
+.burger-line {
+  width: 22px;
+  height: 2px;
+  background: currentColor;
+  border-radius: 2px;
+  display: block;
+  margin: 3px 0;
+}
+
+/* Título */
+.topbar-title {
+  font-weight: 700;
+  letter-spacing: .2px;
+  font-size: 18px;
+  line-height: 1;
+}
+
+/* Derecha: user-pill + iconos */
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Pill usuario */
+.user-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: color-mix(in srgb, #000 10%, transparent);
+  padding: 6px 10px;
+  border-radius: 999px;
+}
+.user-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  line-height: 0;
+}
+.user-name {
+  font-size: 14px;
+  font-weight: 600;
+}

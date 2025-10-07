@@ -99,7 +99,7 @@ async function rebuildDescendantLinkRoutes(folderId) {
 router.get('/', verifyToken, authorizePermission("can_manage_endpoints"), async (_req, res) => {
   try {
     const { rows } = await pool.query(
-      `SELECT id, label, url, route, icon, position, nivel_requerido, type, parent_id
+      `SELECT *
        FROM menu_items
        ORDER BY parent_id NULLS FIRST, position, id`
     );
@@ -113,7 +113,7 @@ router.get('/', verifyToken, authorizePermission("can_manage_endpoints"), async 
 // ============ CREAR ============
 router.post('/', verifyToken, authorizePermission("can_manage_endpoints"), async (req, res) => {
   try {
-    let { label, url, route, icon, nivel_requerido, type, parent_id } = req.body;
+    let { label, url, route, icon, permission_id, type, parent_id } = req.body;
     if (!label) return res.status(400).json({ error: 'Falta "label"' });
 
     type = (type === 'folder') ? 'folder' : 'link';
@@ -138,17 +138,15 @@ router.post('/', verifyToken, authorizePermission("can_manage_endpoints"), async
       route = effective;
     }
 
-    const nivel = parseInt(nivel_requerido || 1) || 1;
-
     const { rows } = await pool.query(
-      `INSERT INTO menu_items (label, url, route, icon, position, nivel_requerido, type, parent_id)
+      `INSERT INTO menu_items (label, url, route, icon, position, permission_id, type, parent_id)
        VALUES (
          $1, $2, $3, $4,
          (SELECT COALESCE(MAX(position),0)+1 FROM menu_items WHERE parent_id IS NOT DISTINCT FROM $7),
          $5, $6, $7
        )
-       RETURNING id, label, url, route, icon, position, nivel_requerido, type, parent_id`,
-      [ label, url || null, route, icon || null, nivel, type, pid ]
+       RETURNING id, label, url, route, icon, position, permission_id, type, parent_id`,
+      [ label, url || null, route, icon || null, permission_id, type, pid ]
     );
 
     res.status(201).json(rows[0]);
@@ -255,7 +253,7 @@ router.put('/reorder', verifyToken, authorizePermission("can_manage_endpoints"),
 router.put('/:id', verifyToken, authorizePermission("can_manage_endpoints"), async (req, res) => {
   try {
     const { id } = req.params;
-    let { label, url, route, icon, nivel_requerido, type, parent_id } = req.body;
+    let { label, url, route, icon, permission_id, type, parent_id } = req.body;
 
     const currentRes = await pool.query(
       `SELECT id, route, type, parent_id, position FROM menu_items WHERE id = $1`,
@@ -300,7 +298,6 @@ router.put('/:id', verifyToken, authorizePermission("can_manage_endpoints"), asy
     }
 
     const iconVal = icon === undefined ? null : (icon || null);
-    const nivelVal = nivel_requerido == null ? null : parseInt(nivel_requerido);
 
     // Si cambia de grupo, recolocar al final del grupo destino
     let newPos = null;
@@ -319,13 +316,13 @@ router.put('/:id', verifyToken, authorizePermission("can_manage_endpoints"), asy
            url = $2,
            route = $3,
            icon = $4,
-           nivel_requerido = COALESCE($5, nivel_requerido),
+           permission_id = $5
            type = $6,
            parent_id = $7,
            position = COALESCE($8, position)
        WHERE id = $9
-       RETURNING id, label, url, route, icon, position, nivel_requerido, type, parent_id`,
-      [label || null, urlVal, routeVal, iconVal, nivelVal, type, pid, newPos, id]
+       RETURNING id, label, url, route, icon, position, permission_id, type, parent_id`,
+      [label || null, urlVal, routeVal, iconVal, permission_id, type, pid, newPos, id]
     );
 
     // Si hemos modificado una carpeta (nombre o parent), recalculamos las rutas de todos sus descendientes

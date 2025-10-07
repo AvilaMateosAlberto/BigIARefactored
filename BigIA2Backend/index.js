@@ -9,6 +9,7 @@ const cookieParser = require('cookie-parser');
 
 const db = require('./db'); // Pool + waitForDb()
 const authRoutes = require('./routes/auth');
+const usersRoutes = require('./routes/users');
 const menuRoutes = require('./routes/menu');
 const settingsRoutes = require('./routes/settings');
 const revealjsApiRoutes = require('./routes/revealjsapi');
@@ -75,6 +76,7 @@ app.get('/api/health', async (_req, res) => {
    Rutas API
    ========================= */
 app.use('/api/auth', authRoutes);
+app.use('/api/users', usersRoutes);
 app.use('/api/menu', menuRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/revealjsapi', revealjsApiRoutes); // fuera de /api => no le afecta el guard

@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Login (prueba)</title>
+  <style>
+    :root{ --bg:#0f1724; --card:#0b1220; --accent:#c40000; --muted:#9aa7b2; --text:#e6eef6; }
+    body{ background:linear-gradient(180deg,#071021 0%, #071529 100%); color:var(--text); font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial; height:100vh; display:flex; align-items:center; justify-content:center; margin:0;}
+    .card{ width:360px; background:var(--card); padding:20px 22px; border-radius:12px; box-shadow:0 8px 30px rgba(2,6,23,.6); }
+    h1{ margin:0 0 14px 0; font-size:20px; color:var(--accent); }
+    label{ display:block; margin-top:10px; font-size:13px; color:var(--muted); }
+    input[type="text"], input[type="password"]{ width:100%; padding:10px 12px; margin-top:6px; border-radius:8px; border:1px solid rgba(255,255,255,0.04); background:rgba(255,255,255,0.02); color:var(--text); box-sizing:border-box; }
+    button{ margin-top:14px; width:100%; padding:10px 12px; border-radius:8px; background:var(--accent); color:white; border:0; font-weight:600; cursor:pointer; }
+    .small{ font-size:13px; color:var(--muted); margin-top:8px; }
+    .resp{ margin-top:12px; padding:10px; border-radius:8px; background:rgba(255,255,255,0.02); font-size:13px; color:var(--muted); white-space:pre-wrap; max-height:180px; overflow:auto; }
+    .ok{ color:#8de39a; }
+    .err{ color:#ff9aa2; }
+    .help{ margin-top:8px; font-size:12px; color:var(--muted); }
+  </style>
+</head>
+<body>
+  <div class="card" role="main">
+    <h1>Login — Prueba API</h1>
+
+    <label for="username">Usuario</label>
+    <input id="username" type="text" placeholder="admin" value="admin" autocomplete="username">
+
+    <label for="password">Contraseña</label>
+    <input id="password" type="password" placeholder="tu contraseña" value="admin1234" autocomplete="current-password">
+
+    <button id="btn">Iniciar sesión</button>
+
+    <div class="small">Endpoint: <code>POST http://localhost:3001/api/auth/login</code></div>
+    <div class="help">Si tu backend corre en otro puerto/host, cambia la constante <code>API_BASE</code> en el script.</div>
+
+    <div id="resp" class="resp" aria-live="polite"></div>
+  </div>
+
+  <script>
+    // Cambia si tu API está en otro host/puerto
+    const API_BASE = 'http://localhost:3001';
+
+    const btn = document.getElementById('btn');
+    const resp = document.getElementById('resp');
+
+    function show(msg, ok = true) {
+      resp.textContent = typeof msg === 'string' ? msg : JSON.stringify(msg, null, 2);
+      resp.classList.toggle('ok', ok);
+      resp.classList.toggle('err', !ok);
+    }
+
+    btn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      show('Enviando…', true);
+
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value;
+
+      try {
+        const r = await fetch(`${API_BASE}/api/auth/login`, {
+          method: 'POST',
+          credentials: 'include',              // <- importante si backend devuelve cookies httpOnly
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify({ username, password })
+        });
+
+        const body = await r.json().catch(() => ({ status: r.status, text: 'no-json-response' }));
+
+        if (r.ok) {
+          show({ status: r.status, body }, true);
+          // Si el backend devuelve accessToken en JSON, lo verás en body.
+          // Si usas cookies httpOnly (refresh token), cookie se habrá guardado automáticamente.
+        } else {
+          show({ status: r.status, body }, false);
+        }
+      } catch (err) {
+        show('Error de conexión: ' + (err.message || err), false);
+      }
+    });
+  </script>
+</body>
+</html>

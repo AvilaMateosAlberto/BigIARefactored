@@ -17,6 +17,8 @@ const paths = {
   home: "M3 12l9-7 9 7v8a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1Z",
   cog: "M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z",
   link: "M10 13a5 5 0 0 1 0-7l2-2a5 5 0 0 1 7 7l-1 1M14 11a5 5 0 0 1 0 7l-2 2a5 5 0 0 1-7-7l1-1",
+  folder: "M3 7h6l2 2h10v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z",
+  folderOpen: "M3 7h6l2 2h10v4H7l-2 6H3V7z",
 };
 
 export default function IconResolver({ name, size = 18, stroke = "currentColor" }) {

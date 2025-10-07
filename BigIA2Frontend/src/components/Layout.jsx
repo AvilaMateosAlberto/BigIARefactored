@@ -1,34 +1,44 @@
+// src/components/Layout.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import Topbar from "./Topbar";
-import Sidebar from "./Sidebar";
+import SidebarTree from "./SidebarTree";
 
+/**
+ * AppShell reutilizable con SidebarTree (carpetas + páginas).
+ * - title, menu (array árbol), rightSlot/leftSlot (slots opcionales)
+ * - Usa react-router (navigate/location) y cierra el sidebar al cambiar de ruta.
+ */
 export default function Layout({
   title = "BigIA 2.0",
-  menu = [],
+  menu = [],            // árbol: [{ id, type:'folder'|'page', label, route?, icon?, children? }, ...]
   rightSlot,
   leftSlot,
   onNavigate: onNavigateProp,
   activePath: activePathProp,
   children,
 }) {
-  const navigate = useNavigate?.();
-  const location = useLocation?.();
-  const hasRouter = Boolean(location && navigate);
+  // Estamos dentro de Router, así que podemos usar hooks directamente
+  const navigate = useNavigate();
+  const location = useLocation();
+
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const activePath = useMemo(() => {
     if (activePathProp) return activePathProp;
-    if (hasRouter) return location.pathname;
-    return "/";
-  }, [activePathProp, hasRouter, location]);
+    return location.pathname || "/";
+  }, [activePathProp, location.pathname]);
 
   const onNavigate = (path) => {
-    if (onNavigateProp) return onNavigateProp(path);
-    if (hasRouter && path) navigate(path);
+    if (!path) return;
+    if (onNavigateProp) onNavigateProp(path);
+    else navigate(path);
   };
 
-  useEffect(() => { if (sidebarOpen) setSidebarOpen(false); }, [activePath]);
+  // Cerrar sidebar en móvil cuando cambia la ruta activa
+  useEffect(() => {
+    if (sidebarOpen) setSidebarOpen(false);
+  }, [activePath]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="appshell">
@@ -40,8 +50,8 @@ export default function Layout({
       />
 
       <div className="appshell-main" style={{ display: "flex", minHeight: "calc(100vh - 56px)" }}>
-        <Sidebar
-          menu={menu}
+        <SidebarTree
+          tree={menu}
           activePath={activePath}
           onNavigate={onNavigate}
           collapsed={sidebarOpen}
@@ -49,7 +59,8 @@ export default function Layout({
         />
 
         <main className="appshell-content" role="main" style={{ flex: 1 }}>
-          {hasRouter ? <Outlet /> : children}
+          {/* Si usas router → Outlet; si no, renderiza children */}
+          {<Outlet /> ?? children}
         </main>
       </div>
     </div>

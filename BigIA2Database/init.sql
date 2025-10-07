@@ -61,6 +61,22 @@ CREATE TABLE IF NOT EXISTS app_config (
 );
 
 -- ========================
+-- Sesiones
+-- ========================
+CREATE TABLE sessions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  family_id UUID NOT NULL,
+  refresh_token_hash TEXT NOT NULL,
+  expires_at TIMESTAMPTZ NOT NULL,
+  ip INET,
+  user_agent TEXT,
+  revoked BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- ========================
 -- Datos iniciales
 -- ========================
 INSERT INTO roles (name, description) VALUES

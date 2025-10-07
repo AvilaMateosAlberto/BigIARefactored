@@ -1,29 +1,25 @@
+/* Ancho fluido de ~20–30% y límites cómodos */
 .sidebar {
-  width: 232px; background: var(--surface); color: var(--text);
-  border-right: 1px solid var(--border); height: 100vh; position: sticky; top: 0;
-}
-.sidebar-scroll { height: 100%; overflow: auto; }
-.sidebar-menu { display: flex; flex-direction: column; padding: 8px; gap: 4px; }
-
-.sidebar-item {
-  display: flex; align-items: center; gap: 10px;
-  padding: 10px 12px; border-radius: var(--radius, 12px);
-  border: 1px solid transparent; background: transparent; color: inherit;
-  cursor: pointer; text-align: left;
-  transition: background .15s, color .15s, border-color .15s;
-}
-.sidebar-item:hover { background: color-mix(in srgb, var(--brand) 10%, transparent); }
-.sidebar-item.active {
-  background: color-mix(in srgb, var(--brand) 16%, transparent);
-  color: var(--brand);
-  border-color: color-mix(in srgb, var(--brand) 35%, transparent);
+  width: clamp(180px, 20vw, 280px);
+  background: var(--surface);
+  color: var(--text);
+  border-right: 1px solid var(--border);
+  height: 100vh;
+  position: sticky;
+  top: 0;
 }
 
-/* Móvil: off-canvas */
+/* Móvil off-canvas (igual que tenías, solo ajusto ancho) */
 @media (max-width: 960px) {
   .sidebar {
-    position: fixed; left: 0; top: 56px; height: calc(100vh - 56px);
-    transform: translateX(-100%); transition: transform .2s ease; z-index: 30;
+    position: fixed;
+    left: 0;
+    top: 56px; /* altura de topbar */
+    height: calc(100vh - 56px);
+    transform: translateX(-100%);
+    transition: transform .2s ease;
+    z-index: 30;
+    width: min(86vw, 480px);
   }
   .sidebar.is-open { transform: translateX(0); }
 }

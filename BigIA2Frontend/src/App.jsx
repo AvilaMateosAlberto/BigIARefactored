@@ -54,12 +54,39 @@ function TopbarActions() {
 
 // --- Menú demo mientras llega el backend ---
 const demoMenu = [
-  { id: 1, label: "Inicio", route: "/home", icon: "home" },
-  { id: 2, label: "Endpoints", route: "/endpoints", icon: "link" },
-  { id: 3, label: "Ajustes", route: "/settings", icon: "cog" },
-  // Ejemplo externo para probar DynamicRouteRenderer cuando uses menú con url:
-  // { id: 4, label: "Kibana", route: "/kibana", icon: "link", url: "https://tuservidor/kibana" },
+  { id: "home", type: "page", label: "Inicio", route: "/home", icon: "home" },
+  {
+    id: "dash",
+    type: "folder",
+    label: "Dashboards",
+    icon: "folder",
+    children: [
+      { id: "net", type: "page", label: "Red", route: "/dash/network", icon: "link" },
+      { id: "sec", type: "page", label: "Seguridad", route: "/dash/security", badge: 12 },
+      {
+        id: "cloud",
+        type: "folder",
+        label: "Cloud",
+        children: [
+          { id: "az", type: "page", label: "Azure", route: "/dash/cloud/azure" },
+          { id: "aws", type: "page", label: "AWS", route: "/dash/cloud/aws" },
+          {
+            id: "gcpf",
+            type: "folder",
+            label: "GCP",
+            children: [
+              { id: "gcp1", type: "page", label: "GKE", route: "/dash/cloud/gcp/gke" },
+              { id: "gcp2", type: "page", label: "Logs", route: "/dash/cloud/gcp/logs" },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+  { id: "endp", type: "page", label: "Endpoints", route: "/endpoints", icon: "link" },
+  { id: "settings", type: "page", label: "Ajustes", route: "/settings", icon: "cog" },
 ];
+
 
 // --- Guard muy simple con localStorage ---
 function RequireAuth({ children }) {

@@ -1,0 +1,146 @@
+/* ============================
+   SidebarTree.css (final)
+   ============================ */
+
+/* Contenedor del árbol + variables base */
+.st-tree {
+  padding: 8px;
+
+  /* constantes compartidas */
+  --indent-step: 16px;   /* sangría por nivel */
+  --row-pad-left: 12px;  /* padding izquierdo base de fila */
+  --chev-w: 16px;        /* ancho columna chevron */
+  --icon-w: 22px;        /* ancho columna icono (coincidir con grid) */
+}
+
+/* Wrapper de cada nodo */
+.st-node { position: relative; }
+
+/* ===== Fila ===== */
+.st-row {
+  /* indent visual por nivel */
+  --indent: calc(var(--indent-step) * var(--depth, 0));
+
+  display: grid;
+  grid-template-columns: var(--chev-w) var(--icon-w) 1fr auto;
+  align-items: center;
+  gap: 8px;
+
+  padding: 8px 10px;
+  padding-left: calc(var(--row-pad-left) + var(--indent));
+  border-radius: var(--radius, 12px);
+  border: 1px solid transparent;
+
+  color: var(--text, #0f172a);
+  background: transparent;
+  cursor: pointer;
+  user-select: none;
+  position: relative;
+
+  transition: background .15s ease, border-color .15s ease, color .15s ease;
+}
+.st-row:hover {
+  background: color-mix(in srgb, var(--brand, #c40000) 10%, transparent);
+}
+.st-row.is-active {
+  background: color-mix(in srgb, var(--brand, #c40000) 16%, transparent);
+  color: var(--brand, #c40000);
+  border-color: color-mix(in srgb, var(--brand, #c40000) 35%, transparent);
+}
+
+/* Chevron (triangulito) */
+.st-chevron {
+  transform-origin: center;
+  transition: transform .15s ease;
+  font-size: 12px;
+  color: var(--text-muted, #6b7280);
+  line-height: 1;
+  display: inline-block;
+}
+.st-chevron.rot { transform: rotate(90deg); }
+.st-hidden { visibility: hidden; }
+
+/* Icono / Label / Badge */
+.st-icon { display: inline-grid; place-items: center; }
+.st-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.st-badge {
+  margin-left: 8px;
+  background: color-mix(in srgb, var(--brand, #c40000) 16%, #0000);
+  color: var(--brand, #c40000);
+  border: 1px solid color-mix(in srgb, var(--brand, #c40000) 35%, #0000);
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 12px;
+}
+
+/* ===== Grupo de hijos =====
+   - Inyectamos --parent-depth para usar la profundidad del PADRE en las líneas
+*/
+.st-children {
+  --parent-depth: var(--depth);       /* hereda la profundidad del padre */
+  position: relative;
+
+  overflow: hidden;
+  height: 0;
+  transition: height .18s ease;
+}
+.st-children.open { height: auto; }
+
+/* ===== LÍNEA VERTICAL de rama (sale del icono del folder padre) ===== */
+.st-children::before {
+  content: "";
+  position: absolute;
+  /* X = pad-left padre + indent(parent) + chevron + (icon/2) */
+  left: calc(
+    var(--row-pad-left)
+    + (var(--parent-depth, 0) * var(--indent-step))
+    + var(--chev-w)
+    + (var(--icon-w) / 2)
+  );
+  top: 10px;                /* arranca justo debajo del icono */
+  bottom: 10px;             /* y termina antes del padding inferior */
+  width: 1px;
+  background: var(--border, rgba(0,0,0,.12));
+  opacity: .7;
+  pointer-events: none;
+}
+
+/* ===== Conector HORIZONTAL para cada hijo =====
+   (desde la línea vertical hasta el bloque del hijo) */
+.st-children .st-row { position: relative; }
+.st-children .st-row::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  /* misma X que la vertical del padre */
+  left: calc(
+    var(--row-pad-left)
+    + (var(--parent-depth, 0) * var(--indent-step))
+    + var(--chev-w)
+    + (var(--icon-w) / 2)
+  );
+  width: 12px;              /* largo del conector */
+  height: 1px;
+  background: var(--border, rgba(0,0,0,.12));
+  transform: translateY(-50%);
+  pointer-events: none;
+  opacity: .7;
+}
+
+/* ===== Ajustes visuales por nivel (ultra sutiles, no invaden el label) */
+@media (prefers-color-scheme: light) {
+  .st-children.open {
+    background: color-mix(in srgb, var(--surface, #fff) 98%, var(--brand, #000) 2%);
+  }
+}
+@media (prefers-color-scheme: dark) {
+  .st-children.open {
+    background: color-mix(in srgb, var(--surface, #0b0f18) 96%, var(--brand, #fff) 3%);
+  }
+}
+
+/* Accesibilidad */
+.st-row:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--brand, #c40000) 55%, #ffffff);
+  outline-offset: 2px;
+}

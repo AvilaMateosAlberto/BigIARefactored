@@ -1,5 +1,5 @@
 import React from "react";
-import "./IframePage.css";
+import "./pagesStyles/IframePage.css";
 
 /**
  * Componente que renderiza una página con un iframe a pantalla completa.

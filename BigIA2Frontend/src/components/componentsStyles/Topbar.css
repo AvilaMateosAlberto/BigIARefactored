@@ -1,0 +1,18 @@
+.topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  height: 56px; padding: 0 12px;
+  background: var(--topbar-bg, var(--brand)); color: var(--topbar-fg, #fff);
+  border-bottom: 1px solid var(--border);
+}
+.topbar-left { display: flex; align-items: center; gap: 10px; }
+.topbar-logo { width: 22px; height: 22px; display: block; }
+.topbar-title { font-weight: 600; letter-spacing: .2px; }
+.topbar-right { display: flex; align-items: center; gap: 12px; }
+
+/* Burger (visible en móviles) */
+.topbar-burger { display: none; background: transparent; border: 0; padding: 6px;
+  border-radius: 8px; cursor: pointer; outline-offset: 2px; color: var(--on-primary,#fff); }
+.topbar-burger:focus-visible { outline: 2px solid color-mix(in srgb, var(--brand) 60%, white); }
+.topbar-burger-line { display: block; width: 18px; height: 2px; margin: 3px 0; background: currentColor; border-radius: 2px; }
+
+@media (max-width: 960px) { .topbar-burger { display: inline-flex; } }

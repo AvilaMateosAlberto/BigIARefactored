@@ -1,44 +1,29 @@
+// src/components/IconResolver.jsx
 import React from "react";
 import * as Icons from "@mui/icons-material";
 import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
 
-/**
- * Uso:
- *  <IconResolver name="home" size={18} />
- *  <IconResolver iconName="Home" fontSize="small" />
- */
-const NAME_MAP = {
-  // genéricos de tu app → MUI component names
-  home: "Home",
-  cog: "Settings",
-  settings: "Settings",
-  link: "Link",
-  bell: "Notifications",
-  user: "Person",
-  logout: "Logout",
-  moon: "DarkMode",
-  sun: "LightMode",
-  folder: "Folder",
-  folderOpen: "FolderOpen",
-  menu: "Menu",
-  // añade aquí los que quieras: "shield": "Shield", etc.
-};
+export default function IconResolver({ name, iconName, size, style, ...rest }) {
+  const raw = (name ?? iconName ?? "").toString().trim();
+  if (!raw) return <HelpOutlineIcon {...rest} style={style} />;
 
-export default function IconResolver(props) {
-  const { name, iconName, size, ...rest } = props;
+  // Normaliza nombre: convierte “visibility-off” o “visibility_off” → “VisibilityOff”
+  const cleaned = raw
+    .replace(/icon$/i, "")
+    .replace(/[^a-zA-Z0-9]+(.)/g, (_, chr) => chr.toUpperCase());
+  const pascal = cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
 
-  // 1) nombre de entrada (prefiere `name`; si no, `iconName`)
-  const raw = (name ?? iconName ?? "").toString();
+  // Busca variantes típicas de MUI
+  const candidates = [
+    pascal,
+    `${pascal}Outlined`,
+    `${pascal}Rounded`,
+    `${pascal}TwoTone`,
+    `${pascal}Sharp`,
+  ];
+  const IconCmp = candidates.map((c) => Icons[c]).find(Boolean) || HelpOutlineIcon;
 
-  // 2) normalización: permite "home", "Home", "HomeIcon"
-  const candidate =
-    NAME_MAP[raw] ||
-    raw.replace(/Icon$/, ""); // quita sufijo Icon si viene
+  const mergedStyle = size ? { fontSize: size, ...(style || {}) } : style;
 
-  const IconCmp = Icons[candidate] || HelpOutlineIcon;
-
-  // 3) tamaño: si pasas `size` numérico, lo aplicamos via style; si no, usa props MUI (small/medium/large)
-  const style = size ? { fontSize: size, ...(rest.style || {}) } : rest.style;
-
-  return <IconCmp {...rest} style={style} />;
+  return <IconCmp {...rest} style={mergedStyle} />;
 }

@@ -21,6 +21,15 @@ export function AppProvider({ children }) {
     }
   }, [config.brand]);
 
+  const storedUser = getItem('user');
+  const storedMenu = getItem('menu');
+  const storedPermissions = getItem('permissions');
+  const [user, setUser] = useState(storedUser || null);
+  const [menu, setMenu] = useState(storedMenu || []);
+  const [permissions, setPermissions] = useState(storedPermissions || []);
+  useEffect(() => { setItem('user', user); }, [user]);
+  useEffect(() => { setItem('menu', menu); }, [menu]);
+  useEffect(() => { setItem('permissions', permissions); }, [permissions]);
   // ✅ Si ya había un color guardado en localStorage, lo aplica al inicio
   useEffect(() => {
     const savedColor = getItem("brand_color", false);
@@ -44,9 +53,30 @@ export function AppProvider({ children }) {
       console.warn("Error cargando configuración:", err);
     }
   }
+  // Login/logout programáticos
+  const login = (newUser, newMenu, newPermissions, accessToken) => {
+    setUser(newUser);
+    setMenu(newMenu || []);
+    setPermissions(newPermissions || []);
+    setItem('user', newUser);
+    setItem('menu', newMenu || []);
+    setItem('permissions', newPermissions || []);
+    setAccessToken(accessToken || null);
+  };
 
   return (
-    <AppContext.Provider value={{ config, setConfig, loadAppConfig }}>
+    <AppContext.Provider value={{ 
+      config, 
+      setConfig, 
+      loadAppConfig,
+      user,
+      setUser,
+      menu,
+      setMenu,
+      permissions,
+      setPermissions,
+      login 
+    }}>
       {children}
     </AppContext.Provider>
   );

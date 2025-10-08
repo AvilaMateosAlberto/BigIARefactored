@@ -1,13 +1,20 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
-// https://vite.dev/config/
+// cambia si tu backend corre en otra IP/puerto
+const BACKEND = process.env.VITE_BACKEND || 'http://10.14.1.223:3001';
+
 export default defineConfig({
   plugins: [react()],
   server: {
-    host: true,   // permite acceso desde cualquier host
+    host: true,          // <- para acceder por IP (10.14.1.223)
     port: 5173,
-    cors: true,   // permite peticiones desde cualquier origen
-    strictPort: true // opcional: no cambia de puerto si está ocupado
-  }
+    proxy: {
+      '/api': {
+        target: BACKEND, // http://10.14.1.223:3001
+        changeOrigin: true,
+        secure: false,
+      },
+    },
+  },
 })

@@ -1,18 +1,21 @@
 // src/pages/LoginForm.jsx
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useApp } from "../context/AppContext";
-import api, { setAccessToken } from "../api/axiosInstance";
+import api from "../api/axiosInstance";
 import "./pagesStyles/LoginForm.css";
-import IconResolver from "../components/IconResolver"; // ✅ tu clase global de iconos
+import IconResolver from "../components/IconResolver";
 
 export default function LoginForm() {
-  const { login } = useApp(); // ✅ hook del contexto
+  const navigate = useNavigate();
+  const { login } = useApp();
+
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
- 
+
   const togglePassword = () => setShowPassword((v) => !v);
 
   const submit = async (e) => {
@@ -22,22 +25,20 @@ export default function LoginForm() {
 
     try {
       const res = await api.post("/auth/login", { username, password });
-      const { accessToken, user, menu, permissions } = res.data.body;
+      // El backend devuelve { accessToken, user, menu, permissions } en la raíz
+      const { accessToken, user, menu, permissions } = res.data;
 
-      // Guardar el accessToken temporalmente en axios
-      setAccessToken(accessToken);
-
-      // Llamar a la función de login de AppContext
+      // Guarda todo en contexto (esta función también setea el access token en axios)
       login(user, menu, permissions, accessToken);
 
-      setInfo("¡Login correcto!");
+      navigate("/home", { replace: true });
     } catch (err) {
       setError("Usuario o contraseña incorrectos");
       console.error("Error login:", err?.response || err);
     }
   };
 
-  const title = /* config?.login_message || */ "Acceso a BigIA 2.0";
+  const title = "Acceso a BigIA 2.0";
 
   return (
     <form onSubmit={submit} className="login-form">

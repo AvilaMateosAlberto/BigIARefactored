@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import * as MuiIcons from '@mui/icons-material';
-import './IconPicker.css';
+import './componentsStyles/IconPicker.css';
 
 function useOutsideClick(ref, onOutside) {
   useEffect(() => {

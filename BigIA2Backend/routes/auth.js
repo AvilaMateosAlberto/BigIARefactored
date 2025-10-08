@@ -25,7 +25,7 @@ async function getPermissionsByRol(role_id) {
   return res.rows.map(r => r.name);
 }
 async function getMenuByRol(role_id) {
-    const { rows } = await pool.query(
+  const { rows } = await pool.query(
     `SELECT 
       m.id,
       m.label,
@@ -81,13 +81,17 @@ async function getMenuByRol(role_id) {
    Cookies helpers
    ========================= */
 function buildCookieOptions() {
+  const prod = process.env.NODE_ENV === 'production';
   const opts = {
     httpOnly: true,
-    secure: 'false', // Solo se permite enviar la cookie por HTTPS
-    sameSite: 'Lax', //La cookie se envia a peticiones desde otros orígenes 
+    secure: prod,                         // boolean, no string
+    sameSite: prod ? 'None' : 'Lax',      // 'None' si habrá terceros dominios + HTTPS
     path: '/api/auth',
     maxAge: REFRESH_TTL_SEC * 1000,
   };
+  if (prod && process.env.COOKIE_DOMAIN) {
+    opts.domain = process.env.COOKIE_DOMAIN;
+  }
   return opts;
 }
 
@@ -95,25 +99,27 @@ function buildCookieOptions() {
    JWT helpers
    ========================= */
 function signAccessToken(user) {
+  // El objeto user que manejas tiene role_id (no role/level)
   return jwt.sign(
     {
       sub: String(user.id),
       id: user.id,
       username: user.username,
-      role: user.role,
-      level: user.level,
-      type: 'access'
+      role_id: user.role_id ?? user.roleId ?? null,
+      type: 'access',
     },
     ACCESS_SECRET,
     { expiresIn: `${ACCESS_TTL}s` }
   );
 }
+
 function signRefreshToken({ sub, jti, familyId }) {
   return jwt.sign(
-    { sub: String(sub), 
-      jti, 
-      fid: familyId, 
-      type: 'refresh' 
+    {
+      sub: String(sub),
+      jti,
+      fid: familyId,
+      type: 'refresh'
     },
     REFRESH_SECRET,
     { expiresIn: `${REFRESH_TTL_SEC}s` }

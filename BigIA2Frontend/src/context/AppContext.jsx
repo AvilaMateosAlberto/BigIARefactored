@@ -32,30 +32,29 @@ export function AppProvider({ children }) {
 
   // Auto-hidratación al montar: usa la cookie httpOnly de refresh
   useEffect(() => {
-    // Evita doble ejecución en dev
     if (didRunRef.current) return;
     didRunRef.current = true;
 
-    // Si estoy en /login, no intentes refrescar todavía para evitar 401 "ruidosos"
-    if (window.location.pathname === "/login") {
-      setLoading(false);
-      return;
-    }
-
     (async () => {
+      const savedToken = localStorage.getItem("accessToken");
+
       try {
-        const { data } = await api.post("/auth/refresh");
-        // Estructura real: { accessToken, user, menu, permissions }
-        const { accessToken, user, menu, permissions } = data;
-        login(user, menu, permissions, accessToken);
+        // Si ya hay token, pruébalo directamente
+        if (savedToken) {
+          const { data } = await api.get("/auth/me");
+          login(data.user, data.menu, data.permissions, savedToken);
+        } else if (document.cookie.split(";").some((c) => c.trim().startsWith("rt="))) {
+          const { data } = await api.post("/auth/refresh");
+          const { accessToken, user, menu, permissions } = data;
+          login(user, menu, permissions, accessToken);
+        } 
       } catch {
-        // Sin sesión; es normal si se entra por primera vez o expiró el refresh
+        // Si falla, limpia todo
         await logout();
       } finally {
         setLoading(false);
       }
     })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Cierre global si el interceptor dispara sessionExpired

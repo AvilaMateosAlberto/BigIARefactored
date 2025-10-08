@@ -1,76 +1,180 @@
-// src/pages/SettingsPage.jsx
-import React, { useEffect, useState } from 'react';
-import api from '../api/axiosInstance';
+import React, { useEffect, useState } from "react";
+import api from "../api/axiosInstance";
+import { useApp } from "../context/AppContext";
+import "./pagesStyles/SettingsPage.css"; // <-- asegúrate de la ruta
 
-const LS_KEY = 'branding_base_color_v1';
+const DEFAULTS = {
+  topbar_color: "#6cab3c",     // el verde del “antes” como default visual
+  topbar_text: "BigIA 2.0",
+  document_title: "BigIA 2.0",
+  login_message: "Acceso a BigIA 2.0",
+};
 
-export default function SettingsPage() {
-  const [color, setColor] = useState('#c40021'); // predeterminado
+const OPEN_MODE = true;
+
+export default function Settings() {
+  const { setTopbarStyle } = useApp?.() || { setTopbarStyle: () => {} };
+
+  const [form, setForm] = useState(DEFAULTS);
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [msg, setMsg] = useState('');
+
+  // aplica variables CSS para que todo el tema adopte el color
+  const applyThemeVars = (hex) => {
+    const root = document.documentElement;
+    root.style.setProperty("--topbar-bg", hex);
+    // opcional: si usas acentos primarios
+    root.style.setProperty("--brand", hex);
+  };
 
   useEffect(() => {
-    // carga local (y aplica)
-    const saved = localStorage.getItem(LS_KEY);
-    if (saved) {
-      setColor(saved);
-      applyColor(saved);
-    }
+    let cancel = false;
+    (async () => {
+      try {
+        setLoading(true);
+        const { data } = await api.get("/settings");
+        if (cancel) return;
+        const cfg = { ...DEFAULTS, ...(data || {}) };
+        setForm(cfg);
+        document.title = cfg.document_title || DEFAULTS.document_title;
+        applyThemeVars(cfg.topbar_color || DEFAULTS.topbar_color);
+        setTopbarStyle?.({ color: cfg.topbar_color, text: cfg.topbar_text });
+      } catch (e) {
+        console.warn("GET /settings", e);
+        // deja defaults si falla
+        applyThemeVars(DEFAULTS.topbar_color);
+        setTopbarStyle?.({ color: DEFAULTS.topbar_color, text: DEFAULTS.topbar_text });
+      } finally {
+        if (!cancel) setLoading(false);
+      }
+    })();
+    return () => { cancel = true; };
   }, []);
 
-  function applyColor(value) {
-    const root = document.documentElement;
-    root.style.setProperty('--brand', value);
-    // ejemplo de derivadas si ya las usas:
-    root.style.setProperty('--topbar-bg', value);
-    // añade más variables si tu tema las usa...
-  }
+  const onChange = (e) => {
+    const { name, value } = e.target;
+    setForm((p) => ({ ...p, [name]: value }));
+    if (name === "topbar_color") {
+      applyThemeVars(value);
+      setTopbarStyle?.({ color: value, text: form.topbar_text });
+    }
+    if (name === "document_title") {
+      document.title = value || DEFAULTS.document_title;
+    }
+  };
 
-  async function handleSave() {
+  const restoreDefaults = () => {
+    setForm(DEFAULTS);
+    applyThemeVars(DEFAULTS.topbar_color);
+    setTopbarStyle?.({ color: DEFAULTS.topbar_color, text: DEFAULTS.topbar_text });
+    document.title = DEFAULTS.document_title;
+  };
+
+  const onSave = async (e) => {
+    e.preventDefault();
     try {
       setSaving(true);
-      setMsg('');
-      // Guardado local inmediato (para que persista aunque el backend no exista)
-      localStorage.setItem(LS_KEY, color);
-      applyColor(color);
-
-      // Si tienes un endpoint para branding, descomenta:
-      // await api.post('/branding', { baseColor: color });
-
-      setMsg('Guardado ✅');
+      const payload = {
+        topbar_color: form.topbar_color || DEFAULTS.topbar_color,
+        topbar_text: form.topbar_text || DEFAULTS.topbar_text,
+        document_title: form.document_title || DEFAULTS.document_title,
+        login_message: form.login_message || DEFAULTS.login_message,
+      };
+      const { data } = await api.post("/settings", payload);
+      applyThemeVars(data.topbar_color);
+      setTopbarStyle?.({ color: data.topbar_color, text: data.topbar_text });
+      if (data.document_title) document.title = data.document_title;
+      alert("Guardado");
     } catch (e) {
-      setMsg(e?.response?.data?.error || 'No se pudo guardar');
+      console.error("POST /settings", e);
+      alert(e?.response?.data?.error || "No se pudo guardar");
     } finally {
       setSaving(false);
-      setTimeout(() => setMsg(''), 2000);
     }
-  }
+  };
+
+  if (loading) return <div className="settings-shell"><div className="settings-card">Cargando…</div></div>;
 
   return (
-    <div style={{ padding: 24 }}>
-      <h1>🎨 Personalización</h1>
-      <p style={{ color: 'var(--muted-foreground, #888)' }}>
-        Ajusta el color base de la aplicación (afecta a barra superior, botones, acentos, etc.).
-      </p>
+    <div className="settings-shell">
+      <h1 className="settings-title">Personalización</h1>
 
-      <div style={{
-        marginTop: 16, display: 'flex', gap: 16, alignItems: 'center',
-        padding: 16, border: '1px solid var(--border, #2a2a2a)', borderRadius: 12
-      }}>
-        <label style={{ minWidth: 140 }}>Color corporativo</label>
-        <input type="color" value={color} onChange={e => setColor(e.target.value)} />
-        <button onClick={handleSave} disabled={saving}>
-          {saving ? 'Guardando...' : 'Guardar'}
-        </button>
-        {msg && <span style={{ marginLeft: 8 }}>{msg}</span>}
-      </div>
+      <div className="settings-card">
+        <p className="settings-subtitle">Personalización de la aplicación</p>
 
-      <div style={{ marginTop: 24 }}>
-        <small>
-          Consejo: si tu backend expone configuración de marca, conecta aquí el POST a <code>/branding</code>.
-        </small>
+        <form onSubmit={onSave} className="settings-grid">
+          {/* Texto barra */}
+          <div className="field field--left">
+            <label>Texto de la barra</label>
+            <input
+              type="text"
+              name="topbar_text"
+              value={form.topbar_text}
+              onChange={onChange}
+              placeholder="BigIA 2.0"
+            />
+          </div>
+
+          {/* Color barra */}
+          <div className="field field--right">
+            <label>Color de la barra</label>
+            <div className="color-row">
+              <input
+                className="color-input"
+                type="color"
+                name="topbar_color"
+                value={form.topbar_color}
+                onChange={onChange}
+                aria-label="Color de la barra"
+              />
+            </div>
+          </div>
+
+          {/* Título documento */}
+          <div className="field field--left">
+            <label>Título del documento</label>
+            <input
+              type="text"
+              name="document_title"
+              value={form.document_title}
+              onChange={onChange}
+              placeholder="BigIA 2.0"
+            />
+          </div>
+
+          {/* Tema global (visual, como en el antes) */}
+          <div className="field field--right">
+            <label>Tema por defecto (global)</label>
+            <select value="light" onChange={() => {}} disabled>
+              <option value="light">Claro</option>
+              <option value="dark">Oscuro</option>
+              <option value="auto">Auto</option>
+            </select>
+          </div>
+
+          {/* Mensaje login */}
+          <div className="field field--full">
+            <label>Mensaje de login</label>
+            <input
+              type="text"
+              name="login_message"
+              value={form.login_message}
+              onChange={onChange}
+              placeholder="Acceso a BigIA 2.0"
+            />
+          </div>
+
+          {/* Acciones */}
+          <div className="actions">
+            <button type="submit" className="btn btn-primary" disabled={saving}>
+              {saving ? "Guardando…" : "Guardar"}
+            </button>
+            <button type="button" className="btn" onClick={restoreDefaults}>
+              Restaurar por defecto
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );
 }
-

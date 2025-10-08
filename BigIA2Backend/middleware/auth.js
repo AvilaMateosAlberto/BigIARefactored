@@ -4,12 +4,14 @@ const ACCESS_SECRET = process.env.ACCESS_TOKEN_SECRET;
 
 // Middleware: exige token válido, adjunta req.user
 function verifyToken(req, res, next) {
+  //console.error('Req recibido:', req);
   const auth = req.headers['authorization'] || req.headers['Authorization'];
   if (!auth || !/^Bearer\s+/i.test(auth)) {
     return res.status(401).json({ error: 'No autorizado' });
   }
   const token = auth.split(/\s+/,2)[1];
   try {
+    console.error('Token recibido:', token);
     req.user = jwt.verify(token, ACCESS_SECRET);
     next();
   } catch (err){

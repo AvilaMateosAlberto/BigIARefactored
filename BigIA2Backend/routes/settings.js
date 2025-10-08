@@ -43,6 +43,7 @@ router.get('/public', async (_req, res) => {
 // ====== PRIVADO (admin) ======
 router.get('/', verifyToken, authorizePermission('can_view_admin_dashboards'), async (_req, res) => {
   try {
+    console.error("Me pidieron los settings UwU");
     res.json(await getAppConfig());
   } catch (e) {
     console.error(e);

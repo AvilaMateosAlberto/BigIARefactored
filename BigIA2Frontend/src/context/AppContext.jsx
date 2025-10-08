@@ -1,83 +1,54 @@
-import { createContext, useContext, useState, useEffect } from "react";
-import { applyBrand } from "../utils/themeClient";
-import { updateFavicon } from "../utils/favicon";
-import { getItem, setItem } from "../utils/storage";
+// src/context/AppContext.jsx
+import { createContext, useContext, useEffect, useState } from "react";
+import api, { setAccessToken } from "../api/axiosInstance";
 
 const AppContext = createContext();
-export const useApp = () => useContext(AppContext);
 
 export function AppProvider({ children }) {
-  const [config, setConfig] = useState({
-    brand: "#c40000",
-    title: "BigIA 2.0",
-  });
+  const [user, setUser] = useState(null);
+  const [menu, setMenu] = useState([]);
+  const [permissions, setPermissions] = useState([]);
+  const [loading, setLoading] = useState(true); // para mostrar spinner si quieres
 
-  // ✅ Cuando cambie el color, se aplica a la app entera
-  useEffect(() => {
-    if (config?.brand) {
-      applyBrand(config.brand);
-      updateFavicon(config.brand);
-      setItem("brand_color", config.brand);
-    }
-  }, [config.brand]);
-
-  const storedUser = getItem('user');
-  const storedMenu = getItem('menu');
-  const storedPermissions = getItem('permissions');
-  const [user, setUser] = useState(storedUser || null);
-  const [menu, setMenu] = useState(storedMenu || []);
-  const [permissions, setPermissions] = useState(storedPermissions || []);
-  useEffect(() => { setItem('user', user); }, [user]);
-  useEffect(() => { setItem('menu', menu); }, [menu]);
-  useEffect(() => { setItem('permissions', permissions); }, [permissions]);
-  // ✅ Si ya había un color guardado en localStorage, lo aplica al inicio
-  useEffect(() => {
-    const savedColor = getItem("brand_color", false);
-    if (savedColor) {
-      setConfig((prev) => ({ ...prev, brand: savedColor }));
-      applyBrand(savedColor);
-    }
-  }, []);
-
-  // 📡 Simulación de carga desde el backend
-  async function loadAppConfig() {
-    try {
-      const res = await fetch("/api/settings/public");
-      const data = await res.json();
-      setConfig((prev) => ({
-        ...prev,
-        brand: data.topbar_color,
-        title: data.topbar_text,
-      }));
-    } catch (err) {
-      console.warn("Error cargando configuración:", err);
-    }
-  }
-  // Login/logout programáticos
-  const login = (newUser, newMenu, newPermissions, accessToken) => {
-    setUser(newUser);
-    setMenu(newMenu || []);
-    setPermissions(newPermissions || []);
-    setItem('user', newUser);
-    setItem('menu', newMenu || []);
-    setItem('permissions', newPermissions || []);
-    setAccessToken(accessToken || null);
+  // Login: guarda user/menu/permissions y accessToken
+  const login = (userData, menuData, permissionsData, token) => {
+    setUser(userData);
+    setMenu(menuData || []);
+    setPermissions(permissionsData || []);
+    setAccessToken(token || null);
   };
 
+  // Logout: limpia todo
+  const logout = () => {
+    setUser(null);
+    setMenu([]);
+    setPermissions([]);
+    setAccessToken(null);
+  };
+
+  // Auto-hidratación al montar: refresh token
+  useEffect(() => {
+    (async () => {
+      try {
+        const { data } = await api.post("/auth/refresh"); // backend envía cookie refresh
+        const { accessToken, user, menu, permissions } = data.body;
+        login(user, menu, permissions, accessToken);
+      } catch {
+        logout();
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
   return (
-    <AppContext.Provider value={{ 
-      config, 
-      setConfig, 
-      loadAppConfig,
-      user,
-      setUser,
-      menu,
-      setMenu,
-      permissions,
-      setPermissions,
-      login 
-    }}>
+    <AppContext.Provider
+      value={{ user, menu, permissions, login, logout, loading }}
+    >
       {children}
     </AppContext.Provider>
   );
 }
+
+// Hook para usar el contexto
+export const useApp = () => useContext(AppContext);

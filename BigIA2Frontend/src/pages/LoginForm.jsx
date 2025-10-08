@@ -1,19 +1,18 @@
 // src/pages/LoginForm.jsx
 import { useState } from "react";
-import axios from "../api/axiosInstance";
+import { useApp } from "../context/AppContext";
+import api, { setAccessToken } from "../api/axiosInstance";
 import "./pagesStyles/LoginForm.css";
 import IconResolver from "../components/IconResolver"; // ✅ tu clase global de iconos
 
-// import { useApp } from "../context/AppContext";
-
 export default function LoginForm() {
+  const { login } = useApp(); // ✅ hook del contexto
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
-  // const { login, config } = useApp();
-
+ 
   const togglePassword = () => setShowPassword((v) => !v);
 
   const submit = async (e) => {
@@ -22,11 +21,16 @@ export default function LoginForm() {
     setInfo("");
 
     try {
-      const res = await axios.post("/auth/login", { username, password });
-      const { accessToken, user, menu, permissions } = res.data;
+      const res = await api.post("/auth/login", { username, password });
+      const { accessToken, user, menu, permissions } = res.data.body;
+
+      // Guardar el accessToken temporalmente en axios
+      setAccessToken(accessToken);
+
+      // Llamar a la función de login de AppContext
       login(user, menu, permissions, accessToken);
 
-      setInfo("Demo: aquí iría tu lógica de login.");
+      setInfo("¡Login correcto!");
     } catch (err) {
       setError("Usuario o contraseña incorrectos");
       console.error("Error login:", err?.response || err);

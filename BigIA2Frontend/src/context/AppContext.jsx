@@ -64,6 +64,8 @@ export function AppProvider({ children }) {
     return () => window.removeEventListener("sessionExpired", onExpired);
   }, []);
 
+  // Cargamos la aconfiguración de la aplicación desde base de datos
+
   return (
     <AppContext.Provider
       value={{ user, menu, permissions, login, logout, loading, setMenu }}

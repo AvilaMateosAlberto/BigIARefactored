@@ -20,18 +20,32 @@ function getOnPrimary(hex) {
 // === Aplica el color corporativo globalmente ===
 export function applyBrand(hex) {
   try {
-    document.documentElement.style.setProperty("--brand", hex);
-    document.documentElement.style.setProperty("--on-primary", getOnPrimary(hex));
+    const on = getOnPrimary(hex);
+    const root = document.documentElement;
+    root.style.setProperty("--brand", hex);
+    root.style.setProperty("--topbar-bg", hex);     // asegura topbar = brand
+    root.style.setProperty("--on-primary", on);     // texto legible sobre brand
     localStorage.setItem("brand_color", hex);
   } catch (e) {
     console.warn("Error aplicando color de marca:", e);
   }
 }
 
-// === Cambia tema claro/oscuro manualmente (opcional más adelante) ===
+// === Cambia tema claro/oscuro manualmente ===
 export function setTheme(mode) {
   const root = document.documentElement;
   root.setAttribute("data-theme", mode);
   root.style.colorScheme = mode; // sincroniza scrollbars/inputs
   localStorage.setItem("pref_theme", mode);
+}
+
+// === Inicializa tema y marca desde localStorage (llámalo una vez al boot) ===
+export function initThemeFromStorage() {
+  try {
+    const brand = localStorage.getItem("brand_color");
+    if (brand) applyBrand(brand);
+
+    const pref = localStorage.getItem("pref_theme");
+    if (pref === "light" || pref === "dark") setTheme(pref);
+  } catch {}
 }

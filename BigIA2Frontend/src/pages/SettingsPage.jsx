@@ -10,8 +10,6 @@ const DEFAULTS = {
   login_message: "Acceso a BigIA 2.0",
 };
 
-const OPEN_MODE = true;
-
 export default function Settings() {
   const { setTopbarStyle } = useApp?.() || { setTopbarStyle: () => {} };
 
@@ -140,16 +138,6 @@ export default function Settings() {
               onChange={onChange}
               placeholder="BigIA 2.0"
             />
-          </div>
-
-          {/* Tema global (visual, como en el antes) */}
-          <div className="field field--right">
-            <label>Tema por defecto (global)</label>
-            <select value="light" onChange={() => {}} disabled>
-              <option value="light">Claro</option>
-              <option value="dark">Oscuro</option>
-              <option value="auto">Auto</option>
-            </select>
           </div>
 
           {/* Mensaje login */}

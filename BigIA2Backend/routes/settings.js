@@ -50,7 +50,7 @@ router.get('/', verifyToken, authorizePermission('can_view_admin_dashboards'), a
     res.status(500).json({ error: 'settings_read_failed' });
   }
 });
-router.put('/', verifyToken, authorizePermission('can_view_admin_dashboards'), async (req, res) => {
+router.post('/', verifyToken, authorizePermission('can_view_admin_dashboards'), async (req, res) => {
   try {
     const {
       topbar_color,
@@ -72,7 +72,7 @@ router.put('/', verifyToken, authorizePermission('can_view_admin_dashboards'), a
              login_message = $4
        WHERE id = 1
        RETURNING topbar_color, topbar_text, document_title, login_message`,
-      [color, theme, text, title, loginMsg]
+      [color, text, title, loginMsg]
     );
 
     res.json(rows[0]);

@@ -4,7 +4,7 @@ import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-route
 import "./styles/themes.css";
 import "./App.css";
 
-import LoginForm from "./pages/LoginForm";
+import LoginPage from "./pages/LoginForm";
 import Layout from "./components/Layout";
 import DynamicRouteRenderer from "./pages/DynamicRouteRenderer";
 import TopbarActions from "./components/TopbarActions";
@@ -15,6 +15,7 @@ import EndpointsManager from "./pages/EndpointsManager";
 
 import IconResolver from "./components/IconResolver";
 import { useApp } from "./context/AppContext";
+import UserManagement from "./pages/UserManagement";
 
 /* ============== Tema ============== */
 function applyTheme(next) {
@@ -32,25 +33,11 @@ function RequireAuth({ children }) {
   return children;
 }
 
-/* ============== Login wrapper (sin hacks; solo muestra el formulario) ============== */
-function LoginLayout() {
-  return (
-    <div className="login-page">
-      <header className="top-bar">
-        <div className="topbar-inner">BigIA 2.0</div>
-      </header>
-      <main className="login-container">
-        <LoginForm />
-      </main>
-    </div>
-  );
-}
-
 /* ============== AppShell ============== */
 function AppShell() {
   const { menu } = useApp();           // 👈 lee el menú real del contexto
   return (
-    <Layout title="BigIA 2.0" menu={menu} rightSlot={<TopbarActions />}/>
+    <Layout title="BigIA 2.0" menu={menu} rightSlot={<TopbarActions />} />
   );
 }
 
@@ -59,12 +46,14 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/login" element={<LoginLayout />} />
+        <Route path="/login" element={<LoginPage />} />
         <Route element={<RequireAuth><AppShell /></RequireAuth>}>
           <Route path="/" element={<Navigate to="/home" replace />} />
           <Route path="/home" element={<HomePage />} />
-          <Route path="/settings" element={<SettingsPage />} />
-          <Route path="/endpoints" element={<EndpointsManager />} />
+          <Route path="/configuracion/personalizacion" element={<SettingsPage />} />
+          <Route path="/configuracion/usuarios" element={<UserManagement />} />
+          <Route path="/configuracion/endpoints" element={<EndpointsManager />} />
+          {/* 👇 TODO lo demás viene del menú y lo resuelve DynamicRouteRenderer */}
           <Route path="*" element={<DynamicRouteRenderer />} />
         </Route>
       </Routes>

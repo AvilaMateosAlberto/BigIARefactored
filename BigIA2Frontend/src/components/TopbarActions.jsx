@@ -3,6 +3,7 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { useApp } from "../context/AppContext";
 import IconResolver from "./IconResolver";
+import "./componentsStyles/Topbar.css";
 
 function applyTheme(next) {
   const root = document.documentElement;
@@ -43,26 +44,46 @@ export default function TopbarActions() {
   };
 
   return (
-    <div className="topbar-actions" style={{ display: "flex", alignItems: "center", gap: 12 }}>
-      <span className="user-name" title={user?.username ?? ""}>
-        {user?.username ?? "—"}
+  <div
+    className="topbar-actions"
+    style={{
+      display: "flex",
+      alignItems: "center",
+      gap: "0.01rem", // separa pill / botones
+    }}
+  >
+    {/* Pill de usuario */}
+    <div
+      className="user-pill"
+      title={user?.username ?? ""}
+    >
+      {/* Icono del usuario */}
+      <span className="user-icon" >
+        <IconResolver name={user?.icon ?? "Person"} size={16} />
       </span>
-      <button
-        className="icon-btn"
-        onClick={toggleTheme}
-        title={`Cambiar a ${theme === "light" ? "oscuro" : "claro"}`}
-        style={{ background: "transparent", border: 0, cursor: "pointer" }}
-      >
-        <IconResolver name={theme === "light" ? "moon" : "sun"} size={18} />
-      </button>
-      <button
-        className="icon-btn"
-        onClick={doLogout}
-        title="Salir"
-        style={{ background: "transparent", border: 0, cursor: "pointer" }}
-      >
-        <IconResolver name="logout" size={18} />
-      </button>
+
+      {/* Nombre del usuario */}
+      <span className="user-name">{user?.username ?? "—"}</span>
     </div>
-  );
+
+    {/* Botón de cambio de tema */}
+    <button
+      className="icon-btn"
+      onClick={toggleTheme}
+      title={`Cambiar a ${theme === "light" ? "oscuro" : "claro"}`}
+    >
+      <IconResolver name={theme === "light" ? "DarkMode" : "LightMode"} size={18} />
+    </button>
+
+    {/* Botón de logout */}
+    <button
+      className="icon-btn"
+      onClick={doLogout}
+      title="Salir"
+    >
+      <IconResolver name="logout" size={18} />
+    </button>
+  </div>
+);
+
 }

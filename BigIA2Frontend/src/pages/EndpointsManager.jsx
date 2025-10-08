@@ -433,11 +433,10 @@ export default function EndpointsManager() {
           </label>
 
           <label>
-            Nivel requerido
+            Rol:
             <select name="nivel_requerido" value={form.nivel_requerido} onChange={handleChange}>
-              <option value={0}>0 (Todos)</option>
-              <option value={1}>1 (User)</option>
-              <option value={2}>2 (Admin)</option>
+              <option value={1}>User</option>
+              <option value={2}>Admin</option>
             </select>
           </label>
 

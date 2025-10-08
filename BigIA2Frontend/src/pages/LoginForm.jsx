@@ -1,12 +1,12 @@
-// src/pages/LoginForm.jsx
+// src/pages/LoginPage.jsx
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useApp } from "../context/AppContext";
 import api from "../api/axiosInstance";
-import "./pagesStyles/LoginForm.css";
 import IconResolver from "../components/IconResolver";
+import "./pagesStyles/LoginForm.css";
 
-export default function LoginForm() {
+export default function LoginPage() {
   const navigate = useNavigate();
   const { login } = useApp();
 
@@ -25,12 +25,8 @@ export default function LoginForm() {
 
     try {
       const res = await api.post("/auth/login", { username, password });
-      // El backend devuelve { accessToken, user, menu, permissions } en la raíz
       const { accessToken, user, menu, permissions } = res.data;
-
-      // Guarda todo en contexto (esta función también setea el access token en axios)
       login(user, menu, permissions, accessToken);
-
       navigate("/home", { replace: true });
     } catch (err) {
       setError("Usuario o contraseña incorrectos");
@@ -38,52 +34,54 @@ export default function LoginForm() {
     }
   };
 
-  const title = "Acceso a BigIA 2.0";
-
   return (
-    <form onSubmit={submit} className="login-form">
-      <div className="login-logo" aria-hidden="true" />
-      <h2>{title}</h2>
+    <div className="login-page">
+      <header className="top-bar">
+        <div className="topbar-inner">BigIA 2.0</div>
+      </header>
 
-      <div className="input-wrapper">
-        <input
-          name="username"
-          value={username}
-          placeholder="Usuario"
-          autoFocus
-          required
-          onChange={(e) => setUsername(e.target.value)}
-        />
-      </div>
+      <main className="login-container">
+        <form onSubmit={submit} className="login-form">
+          <div className="login-logo" aria-hidden="true" />
+          <h2>Acceso a BigIA 2.0</h2>
 
-      <div className="input-wrapper">
-        <input
-          type={showPassword ? "text" : "password"}
-          name="password"
-          value={password}
-          placeholder="Contraseña"
-          required
-          onChange={(e) => setPassword(e.target.value)}
-        />
-        <button
-          type="button"
-          className="eye-btn"
-          onClick={togglePassword}
-          aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
-          title={showPassword ? "Ocultar" : "Mostrar"}
-        >
-          {showPassword ? (
-            <IconResolver name="visibility-off" size={18} />
-          ) : (
-            <IconResolver name="visibility" size={18} />
-          )}
-        </button>
-      </div>
+          <div className="input-wrapper">
+            <input
+              name="username"
+              value={username}
+              placeholder="Usuario"
+              autoFocus
+              required
+              onChange={(e) => setUsername(e.target.value)}
+            />
+          </div>
 
-      <button type="submit" className="submit-btn">Entrar</button>
+          <div className="input-wrapper">
+            <input
+              type={showPassword ? "text" : "password"}
+              name="password"
+              value={password}
+              placeholder="Contraseña"
+              required
+              onChange={(e) => setPassword(e.target.value)}
+            />
+            <button
+              type="button"
+              className="eye-btn"
+              onClick={togglePassword}
+              aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+              title={showPassword ? "Ocultar" : "Mostrar"}
+            >
+              <IconResolver name={showPassword ? "visibility-off" : "visibility"} size={18} />
+            </button>
+          </div>
 
-      {error && <p className="error">{error}</p>}
-      {info && <p className="info">{info}</p>}
-    </form>
+          <button type="submit" className="submit-btn">Entrar</button>
+
+          {error && <p className="error">{error}</p>}
+          {info && <p className="info">{info}</p>}
+        </form>
+      </main>
+    </div>
   );
 }

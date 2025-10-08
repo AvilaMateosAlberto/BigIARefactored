@@ -10,7 +10,7 @@ const { verifyToken, authorizePermission } = require('../middleware/auth');
 router.get('/', verifyToken, authorizePermission("can_view_users"), async (_req, res) => {
   try {
     const result = await pool.query(`
-      SELECT u.id, u.username, u.icon, r.nombre AS role, r.nivel AS level
+      SELECT u.id, u.username, u.icon, r.name, u.role_id AS role
       FROM users u
       JOIN roles r ON u.role_id = r.id
       ORDER BY u.username

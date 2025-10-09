@@ -5,48 +5,58 @@ import { useApp } from "../context/AppContext";
 import IconPicker from "../components/IconPicker";
 import "./pagesStyles/EndpointsManager.css";
 
-const RESERVED = new Set([]); // si quieres reservar rutas, añádelas aquí
+// 🔔 helpers centralizados de alertas
+import {
+  loading,
+  close as closeAlert,
+  toastOk,
+  removed,               // ✅ IMPORTAMOS ESTO
+  apiError,
+  confirmDeleteItem,
+  orderSaved,
+  orderSaveError,
+} from "../ui/alerts";
+
+const RESERVED = new Set([]);
 
 export default function EndpointsManager() {
-  const { setMenu, permissions, user } = useApp?.() || { setMenu: () => {}, permissions: [], user: null };
+  const { setMenu, permissions } = useApp?.() || { setMenu: () => {}, permissions: [] };
 
   // --- Estado principal ---
-  const [items, setItems] = useState([]);          // listado plano de menu_items
-  const [selected, setSelected] = useState(null);  // fila seleccionada
+  const [items, setItems] = useState([]);
+  const [selected, setSelected] = useState(null);
   const [form, setForm] = useState({
     label: "",
     url: "",
     route: "",
     icon: "",
     permission_id: null,
-    type: "link",        // 'link' | 'folder'
+    type: "link",
     parent_id: null,
-    nivel_requerido: 1,  // si lo usas
+    nivel_requerido: 1,
     position: 0,
   });
-  const [loading, setLoading] = useState(true);
+  const [loadingState, setLoadingState] = useState(true);
   const [saving, setSaving] = useState(false);
   const [routeError, setRouteError] = useState("");
 
-  // --- Permisos mínimos (si no lo tienes en el backend, al menos oculta UI) ---
-  const canManage = permissions?.includes?.("can_manage_endpoints") || true; // ponlo a true si aún no gestionas permisos en front
+  const canManage = permissions?.includes?.("can_manage_endpoints") || true;
 
   // ========== CARGA ==========
   async function loadItems() {
-    setLoading(true);
+    setLoadingState(true);
     try {
       const { data } = await api.get("/menu");
       setItems(data || []);
     } catch (e) {
       console.error("Error cargando menú:", e?.response?.data || e.message);
-      alert(e?.response?.data?.error || "No se pudo cargar el listado");
+      apiError(e, "No se pudo cargar el listado");
     } finally {
-      setLoading(false);
+      setLoadingState(false);
     }
   }
   useEffect(() => { loadItems(); }, []);
 
-  // Refrescar menú en el contexto (para que Sidebar muestre lo nuevo)
   async function refreshContextMenu() {
     try {
       const { data } = await api.get("/auth/me");
@@ -155,7 +165,6 @@ export default function EndpointsManager() {
   }
 
   function isDescendant(candidateId, possibleAncestorId) {
-    // ¿candidate es descendiente de ancestor?
     let p = parentIdOf(candidateId);
     while (p != null) {
       if (p === possibleAncestorId) return true;
@@ -166,13 +175,13 @@ export default function EndpointsManager() {
   function parentIdOf(id) {
     const it = items.find(x => x.id === id);
     return it ? (it.parent_id ?? null) : null;
-    }
+  }
 
   // ========== CRUD ==========
   async function save() {
-    if (!form.label?.trim()) return alert('Falta "label"');
-    if (form.type === "link" && !form.route?.trim()) return alert('Falta "route" para un link');
-    if (routeError) return alert(routeError);
+    if (!form.label?.trim()) return apiError(null, 'Falta "label"');
+    if (form.type === "link" && !form.route?.trim()) return apiError(null, 'Falta "route" para un link');
+    if (routeError) return apiError(null, routeError);
 
     const payload = {
       label: form.label.trim(),
@@ -186,6 +195,7 @@ export default function EndpointsManager() {
 
     setSaving(true);
     try {
+      loading(selected?.id ? "Guardando cambios…" : "Creando elemento…");
       if (selected?.id) {
         await api.put(`/menu/${selected.id}`, payload);
       } else {
@@ -193,11 +203,13 @@ export default function EndpointsManager() {
       }
       await loadItems();
       await refreshContextMenu();
-      alert("Guardado.");
+      closeAlert();
+      toastOk(selected?.id ? "Elemento actualizado" : "Elemento creado");
       if (!selected?.id) onSelect(null);
     } catch (e) {
       console.error("Error guardando:", e?.response?.data || e.message);
-      alert(e?.response?.data?.error || "Error guardando");
+      closeAlert();
+      apiError(e, "No se pudo guardar");
     } finally {
       setSaving(false);
     }
@@ -205,25 +217,29 @@ export default function EndpointsManager() {
 
   async function removeSelected() {
     if (!selected?.id) return;
-    if (!confirm(`¿Eliminar "${selected.label}"?`)) return;
+    const c = await confirmDeleteItem(selected.label || "elemento");
+    if (!c.isConfirmed) return;
     try {
+      loading("Eliminando…");
       await api.delete(`/menu/${selected.id}`);
       await loadItems();
       await refreshContextMenu();
       onSelect(null);
-      alert("Eliminado.");
+      closeAlert();
+      removed("Elemento eliminado"); // ✅ ahora sí
     } catch (e) {
-      alert(e?.response?.data?.error || "No se pudo eliminar");
+      closeAlert();
+      apiError(e, "No se pudo eliminar");
     }
   }
 
   async function recargarMenu() {
     await refreshContextMenu();
-    alert("Menú recargado en la app.");
+    toastOk("Menú recargado en la app");
   }
 
   // ========== Drag & Drop ==========
-  const [dragInfo, setDragInfo] = useState(null); // {id, __isFolder, parent_id}
+  const [dragInfo, setDragInfo] = useState(null);
 
   function onDragStartRow(row) {
     setDragInfo({ id: row.id, __isFolder: row.__isFolder, parent_id: row.parent_id ?? null });
@@ -248,7 +264,7 @@ export default function EndpointsManager() {
   function onDropRow(targetRow) {
     if (!dragInfo) return;
 
-    // 1) Arrastrando carpeta top-level → reordenar top-level
+    // 1) Reordenar top-level (carpetas)
     if (dragInfo.__isFolder && dragInfo.parent_id == null && targetRow.parent_id == null) {
       const reTop = moveArrayBlockTopLevel(dragInfo.id, targetRow.id);
       const next = items.map(it => {
@@ -263,7 +279,7 @@ export default function EndpointsManager() {
       return;
     }
 
-    // 2) Arrastrando link dentro de la misma carpeta → reordenar dentro
+    // 2) Reordenar links dentro de la misma carpeta
     if (!dragInfo.__isFolder && dragInfo.parent_id === targetRow.parent_id) {
       const siblings = items
         .filter(x => (x.parent_id ?? null) === (targetRow.parent_id ?? null))
@@ -292,19 +308,21 @@ export default function EndpointsManager() {
 
   async function persistOrder() {
     try {
-      // Construye payload con {id, position, parent_id} de TODOS
       const payload = items
         .slice()
         .sort((a, b) => (a.parent_id ?? 0) - (b.parent_id ?? 0) || (a.position ?? 0) - (b.position ?? 0))
         .map(it => ({ id: it.id, position: it.position ?? 0, parent_id: it.parent_id ?? null }));
 
+      loading("Guardando orden…");
       await api.put("/menu/reorder", { items: payload });
       await loadItems();
       await refreshContextMenu();
-      alert("Orden guardado.");
+      closeAlert();
+      orderSaved();
     } catch (e) {
       console.error("Error guardando orden:", e?.response?.data || e.message);
-      alert(e?.response?.data?.error || "No se pudo guardar el orden");
+      closeAlert();
+      orderSaveError();
     }
   }
 
@@ -329,7 +347,7 @@ export default function EndpointsManager() {
           </div>
         </div>
 
-        {loading ? (
+        {loadingState ? (
           <div className="table-wrap"><p>Cargando…</p></div>
         ) : (
           <div className="table-wrap">
@@ -383,7 +401,7 @@ export default function EndpointsManager() {
       <div className="form-panel">
         <div className="panel-header">
           <h2>{selected ? "Editar" : "Nuevo"}</h2>
-          {selected?.id && (
+        {selected?.id && (
             <div className="actions">
               <button className="btn-danger" onClick={removeSelected}>Eliminar</button>
             </div>

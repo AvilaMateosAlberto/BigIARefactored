@@ -13,7 +13,7 @@ const base = () => ({
   cancelButtonColor: "#888",
 });
 
-/** ---------- BÁSICOS ---------- */
+/** ---------- BÁSICOS (modales centrados) ---------- */
 export const ok = (title = "Hecho", text = "Operación realizada") =>
   Swal.fire({ ...base(), icon: "success", title, text });
 
@@ -35,7 +35,7 @@ export const confirm = (title, text, confirmText = "Sí, continuar") =>
   });
 
 /** ---------- TOASTS (esquineros auto-cierre) ---------- */
-export const toast = (title, icon = "info", ms = 2200, position = "top-end") =>
+export const toast = (title, icon = "info", ms = 2000, position = "top-end") =>
   Swal.fire({
     ...base(),
     toast: true,
@@ -47,8 +47,18 @@ export const toast = (title, icon = "info", ms = 2200, position = "top-end") =>
     icon,
   });
 
-export const toastOk = (title = "Guardado") => toast(title, "success");
-export const toastErr = (title = "Error") => toast(title, "error");
+export const toastOk   = (title = "Hecho")  => toast(title, "success");
+export const toastErr  = (title = "Error")  => toast(title, "error");
+export const toastInfo = (title = "Info")   => toast(title, "info");
+
+/** Presets informativos (siempre toast) */
+export const created   = (what = "Elemento creado")      => toastOk(what);
+export const updated   = (what = "Cambios guardados")    => toastOk(what);
+export const removed   = (what = "Elemento eliminado")   => toastOk(what);
+export const reloaded  = (what = "Recargado")            => toastOk(what);
+
+export const orderSaved     = () => toastOk("Orden guardado");
+export const orderSaveError = () => toastErr("No se pudo guardar el orden");
 
 /** ---------- LOADING MODAL (bloqueante) ---------- */
 export const loading = (title = "Procesando…") =>
@@ -95,13 +105,9 @@ export const confirmDeleteItem = (label = "elemento") =>
 export const confirmDanger = (title = "¿Estás seguro?", text = "Esta acción no se puede deshacer") =>
   confirm(title, text, "Entiendo, continuar");
 
-// Reordenación/menú
-export const orderSaved = () => toastOk("Orden guardado");
-export const orderSaveError = () => toastErr("No se pudo guardar el orden");
-
-// Helpers para respuestas de API
-export const apiOk = (msg = "Operación realizada") => ok("Hecho", msg);
+/** ---------- Helpers API ---------- */
+export const apiOk = (msg = "Operación realizada") => toastOk(msg); // ← ahora toast, no modal
 export const apiError = (e, fallback = "No se pudo completar la operación") => {
   const msg = e?.response?.data?.error || e?.message || fallback;
-  return err("Error", msg);
+  return err("Error", msg); // errores críticos siguen siendo modal centrado
 };

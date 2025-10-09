@@ -64,6 +64,8 @@ export default function TopbarActions() {
     const res = await confirm("¿Cerrar sesión?", "Se cerrará tu sesión actual.", "Sí, cerrar sesión");
     if (res.isConfirmed) doLogout();
   };
+  console.log("DEBUG USER EN TOPBAR:", user);
+
 
   return (
     <div
@@ -77,10 +79,15 @@ export default function TopbarActions() {
       {/* Pill de usuario */}
       <div className="user-pill" title={user?.username ?? ""}>
         <span className="user-icon">
-          <IconResolver name={user?.icon ?? "Person"} size={16} />
+          <IconResolver
+            name={user?.icon || "Person"} // Usa el icono del usuario, o Person por defecto
+            size={16}
+          />
         </span>
         <span className="user-name">{user?.username ?? "—"}</span>
       </div>
+
+
 
       {/* Botón de cambio de tema */}
       <button

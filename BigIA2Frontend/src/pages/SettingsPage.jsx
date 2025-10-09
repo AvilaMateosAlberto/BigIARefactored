@@ -1,21 +1,23 @@
+// src/pages/SettingsPage.jsx
 import React, { useEffect, useState } from "react";
 import api from "../api/axiosInstance";
 import { useApp } from "../context/AppContext";
 import { useConfig } from "../context/ConfigContext";
-import "./pagesStyles/SettingsPage.css"; // <-- asegúrate de la ruta
+import "./pagesStyles/SettingsPage.css";
+import { toastOk, apiError, loading as showLoading, close as closeAlert } from "../ui/alerts";
 
 const DEFAULTS = {
-  topbar_color: "#6cab3c",     // el verde del “antes” como default visual
+  topbar_color: "#6cab3c", // el verde del “antes” como default visual
   topbar_text: "BigIA 2.0",
   document_title: "BigIA 2.0",
   login_message: "Acceso a BigIA 2.0",
 };
 
 export default function Settings() {
-  const { setTopbarStyle } = useApp?.() || { setTopbarStyle: () => { } };
+  const { setTopbarStyle } = useApp?.() || { setTopbarStyle: () => {} };
   const { updateConfig } = useConfig();
   const [form, setForm] = useState(DEFAULTS);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true); // ← evita choque con showLoading()
   const [saving, setSaving] = useState(false);
 
   // aplica variables CSS para que todo el tema adopte el color
@@ -30,7 +32,7 @@ export default function Settings() {
     let cancel = false;
     (async () => {
       try {
-        setLoading(true);
+        setIsLoading(true);
         const { data } = await api.get("/settings");
         if (cancel) return;
         const cfg = { ...DEFAULTS, ...(data || {}) };
@@ -43,8 +45,10 @@ export default function Settings() {
         // deja defaults si falla
         applyThemeVars(DEFAULTS.topbar_color);
         setTopbarStyle?.({ color: DEFAULTS.topbar_color, text: DEFAULTS.topbar_text });
+        // si quieres mostrar el error:
+        // apiError(e, "No se pudo cargar la configuración");
       } finally {
-        if (!cancel) setLoading(false);
+        if (!cancel) setIsLoading(false);
       }
     })();
     return () => { cancel = true; };
@@ -75,33 +79,48 @@ export default function Settings() {
     applyThemeVars(DEFAULTS.topbar_color);
     setTopbarStyle?.({ color: DEFAULTS.topbar_color, text: DEFAULTS.topbar_text });
     document.title = DEFAULTS.document_title;
+    // opcional: aviso suave
+    // toastInfo("Restaurado a valores por defecto");
   };
 
   const onSave = async (e) => {
     e.preventDefault();
     try {
       setSaving(true);
+      showLoading("Guardando configuración…");
+
       const payload = {
         topbar_color: form.topbar_color || DEFAULTS.topbar_color,
         topbar_text: form.topbar_text || DEFAULTS.topbar_text,
         document_title: form.document_title || DEFAULTS.document_title,
         login_message: form.login_message || DEFAULTS.login_message,
       };
+
       const { data } = await api.post("/settings", payload);
+
       applyThemeVars(data.topbar_color);
       setTopbarStyle?.({ color: data.topbar_color, text: data.topbar_text });
       if (data.document_title) document.title = data.document_title;
       updateConfig(data);
-      alert("Guardado");
+
+      closeAlert();
+      toastOk("Configuración guardada");
     } catch (e) {
       console.error("POST /settings", e);
-      alert(e?.response?.data?.error || "No se pudo guardar");
+      closeAlert();
+      apiError(e, "No se pudo guardar la configuración");
     } finally {
       setSaving(false);
     }
   };
 
-  if (loading) return <div className="settings-shell"><div className="settings-card">Cargando…</div></div>;
+  if (isLoading) {
+    return (
+      <div className="settings-shell">
+        <div className="settings-card">Cargando…</div>
+      </div>
+    );
+  }
 
   return (
     <div className="settings-shell">

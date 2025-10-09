@@ -13,8 +13,8 @@
 }
 
 .iconpicker-preview {
-  width: 32px;
-  height: 32px;
+  width: 40px;
+  height: 40px;
   border: 1px solid var(--input-border);
   border-radius: 8px;
   display: grid;
@@ -32,6 +32,7 @@
   padding: 8px 10px;
   color: var(--input-text);
   width: 100%;
+  height: 40px;
 }
 .iconpicker-input::placeholder { color: var(--input-placeholder); }
 .iconpicker-input:focus {

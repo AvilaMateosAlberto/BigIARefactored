@@ -2,6 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../db');
+const bcrypt = require('bcrypt');
 const { verifyToken, authorizePermission } = require('../middleware/auth');
 
 /* =========================
@@ -37,25 +38,25 @@ router.get('/roles', verifyToken, authorizePermission("can_view_users"), async (
 });
 
 router.post('/', verifyToken, authorizePermission("can_create_users"), async (req, res) => {
-  const { username, password, role } = req.body;
-  if (!username || !password || !role) {
+  const { username, password, role_id, icon } = req.body;
+  if (!username || !password || !role_id) {
     return res.status(400).json({ error: 'Faltan campos obligatorios' });
   }
 
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
-    const roleRes = await pool.query('SELECT id FROM roles WHERE nombre = $1', [role]);
+    const roleRes = await pool.query('SELECT id FROM roles WHERE id = $1', [role_id]);
     if (roleRes.rows.length === 0) {
       return res.status(400).json({ error: 'Rol no válido' });
     }
     const roleId = roleRes.rows[0].id;
 
     const result = await pool.query(
-      'INSERT INTO users (username, password, role_id) VALUES ($1, $2, $3) RETURNING id',
-      [username, hashedPassword, roleId]
+      'INSERT INTO users (username, password, role_id, icon) VALUES ($1, $2, $3, $4) RETURNING id',
+      [username, hashedPassword, roleId, icon]
     );
 
-    res.status(201).json({ user: { id: result.rows[0].id, username, role } });
+    res.status(201).json({ user: { id: result.rows[0].id, username, role_id, icon } });
   } catch (err) {
     console.error('❌ Error al crear usuario:', err);
     if (err.code === '23505') {

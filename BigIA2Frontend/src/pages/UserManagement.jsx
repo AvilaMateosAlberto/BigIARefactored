@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import api from "../api/axiosInstance";
 import IconResolver from "../components/IconResolver";
+import IconPicker from "../components/IconPicker";
 import "./pagesStyles/UserManagement.css"; // opcional; si no lo tienes, no pasa nada
 
 // === util opcional para evitar que "cargando..." se quede infinito ===
@@ -93,6 +94,10 @@ export default function UserManagement() {
             setErr("Selecciona un rol.");
             return;
         }
+        if (!form.icon) {
+            setErr("Selecciona un icono.");
+            return;
+        }
 
         try {
             if (isEditing) {
@@ -105,6 +110,7 @@ export default function UserManagement() {
                 const { data } = await api.put(`/users/${form.id}`, payload);
                 setUsers((prev) => prev.map((u) => (u.id === data.id ? { ...u, ...data } : u)));
                 reset();
+                reload();
             } else {
                 const payload = {
                     username: form.username,
@@ -115,6 +121,7 @@ export default function UserManagement() {
                 const { data } = await api.post("/users", payload);
                 setUsers((prev) => [...prev, data]);
                 reset();
+                reload();
             }
         } catch (e2) {
             setErr(e2?.response?.data?.error || "No se pudo guardar el usuario.");
@@ -186,30 +193,39 @@ export default function UserManagement() {
                     </div>
                 )}
 
-                <h2 className="users-form-title">Crear nuevo usuario</h2>
+                <h2 className="users-form-title">
+                {isEditing ? "Editar usuario" : "Crear nuevo usuario"}
+                </h2>
 
-                <form onSubmit={submit} className="users-inline">
+                <form onSubmit={submit} className="users-form grid-2col">
+                <label>
+                    <span>Nombre</span>
                     <input
-                        className="input"
-                        name="username"
-                        value={form.username}
-                        onChange={onChange}
-                        placeholder="Username"
-                        autoComplete="off"
+                    className="input"
+                    name="username"
+                    value={form.username}
+                    onChange={onChange}
+                    placeholder="Username"
                     />
+                </label>
 
+                <label>
+                    <span>Contraseña</span>
                     <input
-                        className="input"
-                        name="password"
-                        type="password"
-                        value={form.password}
-                        onChange={onChange}
-                        placeholder={isEditing ? "Nueva contraseña (opcional)" : "Password"}
-                        autoComplete="new-password"
+                    className="input"
+                    name="password"
+                    type="password"
+                    value={form.password}
+                    onChange={onChange}
+                    placeholder={isEditing ? "Nueva contraseña (opcional)" : "Password"}
+                    autoComplete="new-password"
                     />
+                </label>
 
+                <label>
+                    <span>Rol</span>
                     {rolesEmpty ? (
-                    <select className="in" disabled value="">
+                    <select className="input" disabled value="">
                         <option value="">(sin roles)</option>
                     </select>
                     ) : (
@@ -219,11 +235,9 @@ export default function UserManagement() {
                         value={form.role_id}
                         onChange={onChange}
                     >
-                        {/* 👇 esta opción actúa como placeholder */}
-                        <option value="" disabled style={{ color: "#888" }} >
+                        <option value="" disabled>
                         Seleccionar rol...
                         </option>
-
                         {roles.map((r) => (
                         <option key={r.id} value={r.id}>
                             {r.name}
@@ -231,24 +245,34 @@ export default function UserManagement() {
                         ))}
                     </select>
                     )}
+                </label>
 
-                    <button className={`btn btn-success`} type="submit">
-                        {isEditing ? "Guardar" : "Crear"}
+                <label>
+                    <span>Icono</span>
+                    <IconPicker
+                    value={form.icon}
+                    placeholder="Person"
+                    onChange={(v) => setForm({ ...form, icon: v })}
+                    />
+                </label>
+
+                <div className="form-actions">
+                    <button className="btn btn-success" type="submit">
+                    {isEditing ? "Guardar" : "Crear"}
                     </button>
 
-                    {/* Acciones secundarias en el borde derecho */}
-                    <div className="inline-actions">
-                        {isEditing && (
-                            <button className="btn btn-danger" type="button" onClick={reset}>
-                                Cancelar
-                            </button>
-                        )}
-                        <button className="btn" type="button" onClick={reload}>
-                            <IconResolver name={"Cached"} size={18} />
-                        </button>
-                    </div>
+                    {isEditing && (
+                    <button className="btn btn-danger" type="button" onClick={reset}>
+                        Cancelar
+                    </button>
+                    )}
+
+                    <button className="btn" type="button" onClick={reload}>
+                    <IconResolver name={"Cached"} size={18} />
+                    </button>
+                </div>
                 </form>
-            </div>
+
 
             <div className="users-card">
                 <table className="users-table">
@@ -265,7 +289,7 @@ export default function UserManagement() {
                             <tr key={u.id}>
                                 <td>{u.username}</td>
                                 <td>{u.role_name || "—"}</td>
-                                <td>{u.icon || "—"}</td>
+                                <td>{u.icon?(<IconResolver name={u.icon} size={18} />):"—"}</td>
                                 <td>
                                     <div className="inline-actions">
                                         <button className="btn btn-small" onClick={() => edit(u)}>
@@ -289,6 +313,8 @@ export default function UserManagement() {
                     </tbody>
                 </table>
             </div>
+            </div>
         </div>
     );
 }
+

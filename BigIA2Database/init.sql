@@ -104,10 +104,26 @@ INSERT INTO rol_permissions (role_id, permission_id)
 SELECT 2, id FROM permissions
 ON CONFLICT DO NOTHING;
 
--- Usuario admin
-INSERT INTO users (username, password, role_id)
-SELECT 'admin', '$2b$10$J6q9SDwPzCDCODXyGUciX.hGd7P/siYBl/GGRj12QHFbqdc5xAT6u', id
-FROM roles WHERE name='admin'
+-- Usuario admin (icono AdminPanelSettings por defecto)
+INSERT INTO users (username, password, role_id, icon)
+SELECT
+  'admin',
+  '$2b$10$J6q9SDwPzCDCODXyGUciX.hGd7P/siYBl/GGRj12QHFbqdc5xAT6u',
+  id,
+  'AdminPanelSettings'
+FROM roles
+WHERE name = 'admin'
+ON CONFLICT DO NOTHING;
+
+-- Usuario normal de ejemplo (icono Person por defecto)
+INSERT INTO users (username, password, role_id, icon)
+SELECT
+  'user',
+  '$2b$10$J6q9SDwPzCDCODXyGUciX.hGd7P/siYBl/GGRj12QHFbqdc5xAT6u',
+  id,
+  'Person'
+FROM roles
+WHERE name = 'user'
 ON CONFLICT DO NOTHING;
 
 -- Menú inicial

@@ -104,4 +104,8 @@
 .icon-btn {
   border: 0;
   color: var(--on-primary, #ffffff);
+  background-color: transparent;
+}
+.icon-btn:hover {
+  background-color: transparent;
 }

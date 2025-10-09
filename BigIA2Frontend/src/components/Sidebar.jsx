@@ -23,7 +23,7 @@ function NodeRow({ node, depth, expanded, toggle, activePath, onNavigate }) {
   const isFolder = node.type === "folder";
   const isActive = node.route === activePath;
   const isExpanded = expanded.has(node.id);
-  const hasChildren = isFolder && node.children?.length;
+  const hasChildren = isFolder && (node.children?.length>0);
 
   const onClick = () => {
     if (isFolder) toggle(node.id);

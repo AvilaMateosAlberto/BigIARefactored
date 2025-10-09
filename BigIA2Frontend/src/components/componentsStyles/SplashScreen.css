@@ -1,0 +1,57 @@
+/* src/components/componentsStyles/Splash.css */
+
+.splash-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: grid;
+  place-items: center;
+  gap: 1rem;
+  /* Fondo según tema */
+  background: var(--splash-bg, #fff);
+  color: var(--splash-fg, #111);
+}
+
+/* Ajusta colores en función del data-theme que ya usas */
+:root[data-theme="light"] .splash-overlay {
+  --splash-bg: #ffffff;
+  --splash-fg: #111111;
+}
+
+:root[data-theme="dark"] .splash-overlay {
+  --splash-bg: #1f1f1f;
+  --splash-fg: #eeeeee;
+}
+
+.splash-logo {
+  width: min(220px, 45vw);
+  height: auto;
+  user-select: none;
+  -webkit-user-drag: none;
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.15));
+}
+
+/* Spinner tipo Kibana (borde animado) */
+.splash-spinner {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 3px solid rgba(0,0,0,0.15);
+  border-top-color: currentColor;
+  animation: splash-spin 0.9s linear infinite;
+  color: var(--splash-fg);
+}
+
+/* Animación */
+@keyframes splash-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Accesibilidad: si el usuario prefiere menos animación, la reducimos */
+@media (prefers-reduced-motion: reduce) {
+  .splash-spinner {
+    animation: none;
+    border: 3px solid currentColor;
+    opacity: 0.7;
+  }
+}

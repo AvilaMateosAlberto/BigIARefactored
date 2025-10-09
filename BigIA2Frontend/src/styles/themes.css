@@ -11,16 +11,30 @@ html, body, #root { height: 100%; margin: 0; padding: 0; }
   --gray-0:#ffffff; --gray-1:#f6f7fb; --gray-2:#eef2f7; --gray-3:#e5e9f1;
   --gray-4:#d8dee9; --gray-5:#cdd6e1; --gray-6:#8a94a6; --gray-7:#556070; --gray-8:#1d2433;
 
-  /* Estados */
+  /* Estados base */
   --blue-6:#2563eb;
   --red-6:#dc3545;
 
-  /* Semánticos base (light) */
+  /* ===== Semánticos base (light) ===== */
   --bg: var(--gray-1);
   --surface: var(--gray-0);
   --text: var(--gray-8);
   --text-muted: var(--gray-7);
   --border: var(--gray-4);
+
+  /* Derivados útiles */
+  --surface-1: var(--surface);
+  --surface-2: var(--gray-2);
+  --text-2: var(--text-muted);
+
+  /* Sombras */
+  --shadow-sm: rgba(0,0,0,.06);
+  --shadow-md: rgba(0,0,0,.12);
+  --shadow-lg: rgba(0,0,0,.18);
+
+  /* Estados semánticos */
+  --danger: #e53935;
+  --danger-hover: #d32f2f;
 
   /* 🔹 Enlaces */
   --link: var(--blue-6);
@@ -33,12 +47,23 @@ html, body, #root { height: 100%; margin: 0; padding: 0; }
   --input-shadow: rgba(37,99,235,.25);
   --input-placeholder: var(--gray-6);
 
-  /* Topbar / primario derivados de la marca */
+  /* Topbar / primario */
   --topbar-bg: var(--brand);
   --topbar-fg: #ffffff;
   --primary: var(--brand);
 
-  /* Login “glass” */
+  /* Botones de la TOPBAR */
+  --topbar-btn-bg: transparent;
+  --topbar-btn-hover-bg: rgba(255,255,255,.12);
+  --topbar-btn-border: rgba(255,255,255,.25);
+  --topbar-btn-color: var(--topbar-fg);
+
+  /* Sidebar */
+  --sb-child-bg: #f6f8fb;
+  --sb-child-hover-bg: #eef3fb;
+  --sb-child-accent: #d8e4ff;
+
+  /* Login */
   --login-gradient: linear-gradient(135deg,#fafbff 0%,#eef2f7 100%);
   --login-stripe: rgba(0,0,0,.035);
   --login-card-bg: rgba(255,255,255,.65);
@@ -53,12 +78,24 @@ html, body, #root { height: 100%; margin: 0; padding: 0; }
   --gray-0:#0f1318; --gray-1:#161a1f; --gray-2:#1b1e23; --gray-3:#20242a;
   --gray-4:#2e333b; --gray-5:#313641; --gray-6:#a4aebe; --gray-7:#b3bccb; --gray-8:#e9edf4;
 
+  /* Semánticos base */
   --bg: var(--gray-1);
   --surface: var(--gray-2);
   --text: var(--gray-8);
   --text-muted: var(--gray-7);
   --border: var(--gray-4);
 
+  /* Derivados */
+  --surface-1: var(--surface);
+  --surface-2: var(--gray-3);
+  --text-2: var(--text-muted);
+
+  /* Sombras */
+  --shadow-sm: rgba(0,0,0,.18);
+  --shadow-md: rgba(0,0,0,.28);
+  --shadow-lg: rgba(0,0,0,.36);
+
+  /* Inputs */
   --input-bg: var(--gray-1);
   --input-text: var(--gray-8);
   --input-border: var(--gray-5);
@@ -66,13 +103,24 @@ html, body, #root { height: 100%; margin: 0; padding: 0; }
   --input-shadow: rgba(149,192,255,.25);
   --input-placeholder: var(--gray-6);
 
-  /* Marca sigue siendo --brand, solo cambia el contexto */
+  /* Topbar */
   --topbar-bg: var(--brand);
   --topbar-fg: #ffffff;
   --primary: var(--brand);
 
-  /* 🔹 Enlaces en dark */
+  /* Botones de la TOPBAR */
+  --topbar-btn-bg: transparent;
+  --topbar-btn-hover-bg: rgba(255,255,255,.08);
+  --topbar-btn-border: rgba(255,255,255,.22);
+  --topbar-btn-color: var(--topbar-fg);
+
+  /* Enlaces */
   --link: #95c0ff;
+
+  /* Sidebar */
+  --sb-child-bg: #23262e;
+  --sb-child-hover-bg: #282c36;
+  --sb-child-accent: #3a4a66;
 
   /* Login */
   --login-gradient: linear-gradient(135deg,#121417 0%,#2a2f36 100%);
@@ -86,7 +134,7 @@ html, body, #root { height: 100%; margin: 0; padding: 0; }
 /* ====== CAPA 2: SEMÁNTICOS GLOBALES ====== */
 html, body, #root { background: var(--bg); color: var(--text); }
 
-/* 🔹 Enlaces */
+/* Enlaces */
 a { color: var(--link); text-decoration: none; }
 a:hover { text-decoration: underline; }
 
@@ -97,7 +145,59 @@ a:hover { text-decoration: underline; }
   border-bottom: 1px solid var(--border);
 }
 
-/* Botones base */
+/* ===== Botones TOPBAR (tema / logout) ===== */
+.top-bar .topbar-btn,
+.top-bar .icon-btn,
+.top-bar .theme-toggle,
+.top-bar .logout-btn {
+  background: var(--topbar-btn-bg);
+  color: var(--topbar-btn-color);
+  border: 1px solid var(--topbar-btn-border);
+  height: 32px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background .15s ease, border-color .15s ease, transform .03s ease;
+}
+
+/* versión icon-only */
+.top-bar .topbar-btn.icon-only,
+.top-bar .icon-btn.icon-only,
+.top-bar .theme-toggle.icon-only,
+.top-bar .logout-btn.icon-only {
+  width: 32px;
+  padding: 0;
+  border-radius: 10px;
+}
+
+.top-bar .topbar-btn:hover,
+.top-bar .icon-btn:hover,
+.top-bar .theme-toggle:hover,
+.top-bar .logout-btn:hover {
+  background: var(--topbar-btn-hover-bg);
+  border-color: color-mix(in srgb, var(--topbar-btn-border) 75%, var(--topbar-fg));
+}
+
+.top-bar .topbar-btn:active,
+.top-bar .icon-btn:active,
+.top-bar .theme-toggle:active,
+.top-bar .logout-btn:active {
+  transform: translateY(1px);
+}
+
+.top-bar .topbar-btn svg,
+.top-bar .icon-btn svg,
+.top-bar .theme-toggle svg,
+.top-bar .logout-btn svg {
+  color: currentColor;
+}
+
+/* ===== Botones base (el resto van en controls.css) ===== */
 button { font-family: inherit; }
 
 /* ====== LOGIN BACKGROUND ====== */

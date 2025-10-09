@@ -393,12 +393,23 @@ export default function EndpointsManager() {
         <div className="form-grid">
           <label>
             Label
-            <input name="label" value={form.label} onChange={handleChange} placeholder="Nombre visible" />
+            <input
+              className="input"
+              name="label"
+              value={form.label}
+              onChange={handleChange}
+              placeholder="Nombre visible"
+            />
           </label>
 
           <label>
             Tipo
-            <select name="type" value={form.type} onChange={handleChange}>
+            <select
+              className="input"
+              name="type"
+              value={form.type}
+              onChange={handleChange}
+            >
               <option value="link">Link</option>
               <option value="folder">Carpeta</option>
             </select>
@@ -407,6 +418,7 @@ export default function EndpointsManager() {
           <label title="Ruta interna (para links). Se normaliza con / y sin dobles barras.">
             Ruta
             <input
+              className="input"
               name="route"
               value={form.route}
               disabled={form.type === "folder"}
@@ -419,6 +431,7 @@ export default function EndpointsManager() {
           <label title="URL externa (opcional). Si pones URL, la ruta puede quedar vacía.">
             URL
             <input
+              className="input"
               name="url"
               value={form.url}
               disabled={form.type === "folder"}
@@ -434,7 +447,12 @@ export default function EndpointsManager() {
 
           <label>
             Rol:
-            <select name="nivel_requerido" value={form.nivel_requerido} onChange={handleChange}>
+            <select
+              className="input"
+              name="nivel_requerido"
+              value={form.nivel_requerido}
+              onChange={handleChange}
+            >
               <option value={1}>User</option>
               <option value={2}>Admin</option>
             </select>
@@ -442,7 +460,12 @@ export default function EndpointsManager() {
 
           <label title="Carpeta contenedora. El selector evita crear ciclos.">
             Carpeta
-            <select name="parent_id" value={form.parent_id ?? ""} onChange={handleChange}>
+            <select
+              className="input"
+              name="parent_id"
+              value={form.parent_id ?? ""}
+              onChange={handleChange}
+            >
               <option value="">(Top level)</option>
               {allFolders.map(f => {
                 const disabled =

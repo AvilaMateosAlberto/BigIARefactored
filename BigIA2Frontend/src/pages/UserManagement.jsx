@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import api from "../api/axiosInstance";
+import IconResolver from "../components/IconResolver";
 import "./pagesStyles/UserManagement.css"; // opcional; si no lo tienes, no pasa nada
 
 // === util opcional para evitar que "cargando..." se quede infinito ===
@@ -12,16 +13,6 @@ async function tryGet(url) {
     } catch (e) {
         return { ok: false, error: e?.response?.data || e?.message || "error" };
     }
-}
-
-// prueba varias rutas de roles; si no hay roles, seguimos igual (el UI avisa)
-async function fetchRolesResilient() {
-    const candidates = ["/roles", "/users/roles", "/auth/roles"];
-    for (const url of candidates) {
-        const r = await tryGet(url);
-        if (r.ok && Array.isArray(r.data)) return r.data;
-    }
-    return [];
 }
 
 export default function UserManagement() {
@@ -50,23 +41,24 @@ export default function UserManagement() {
             setLoading(true);
             setErr("");
             // hacemos dos peticiones en paralelo; aunque falle roles, seguimos
-            const [uRes, rList] = await Promise.allSettled([tryGet("/users"), fetchRolesResilient()]);
+            const [uRes, rList] = await Promise.allSettled([tryGet("/users"),tryGet("/users/roles")]);
             if (cancel) return;
 
             // users
             if (uRes.status === "fulfilled" && uRes.value.ok && Array.isArray(uRes.value.data)) {
                 setUsers(uRes.value.data);
             } else {
-                const msg =
-                    (uRes.status === "fulfilled" ? uRes.value.error : uRes.reason) || "No se pudieron cargar los usuarios.";
+                const msg = (uRes.status === "fulfilled" ? uRes.value.error : uRes.reason) || "No se pudieron cargar los usuarios.";
                 setErr(String(msg));
                 setUsers([]);
             }
 
             // roles: si falla, simplemente no mostramos el select y avisamos
-            if (rList.status === "fulfilled" && Array.isArray(rList.value)) {
-                setRoles(rList.value);
+            if (rList.status === "fulfilled" && uRes.value.ok  && Array.isArray(rList.value.data)) {
+                setRoles(rList.value.data);
             } else {
+                const msg = (rList.status === "fulfilled" ? rList.value.error : rList.reason) || "No se pudieron cargar los roles.";
+                setErr(String(msg));
                 setRoles([]);
             }
 
@@ -159,7 +151,7 @@ export default function UserManagement() {
         setLoading(true);
         setErr("");
         try {
-            const [{ data: u }, r] = await Promise.all([api.get("/users"), fetchRolesResilient()]);
+            const [{ data: u }, { data: r }] = await Promise.all([api.get("/users"), api.get("/users/roles")]);
             setUsers(u || []);
             setRoles(r || []);
         } catch (e2) {
@@ -198,7 +190,7 @@ export default function UserManagement() {
 
                 <form onSubmit={submit} className="users-inline">
                     <input
-                        className="in"
+                        className="input"
                         name="username"
                         value={form.username}
                         onChange={onChange}
@@ -207,7 +199,7 @@ export default function UserManagement() {
                     />
 
                     <input
-                        className="in"
+                        className="input"
                         name="password"
                         type="password"
                         value={form.password}
@@ -216,20 +208,28 @@ export default function UserManagement() {
                         autoComplete="new-password"
                     />
 
-                    {/* Rol */}
                     {rolesEmpty ? (
-                        <select className="in" disabled value="">
-                            <option value="">(sin roles)</option>
-                        </select>
+                    <select className="in" disabled value="">
+                        <option value="">(sin roles)</option>
+                    </select>
                     ) : (
-                        <select className="in" name="role_id" value={form.role_id} onChange={onChange}>
-                            <option value="">User</option>
-                            {roles.map((r) => (
-                                <option key={r.id} value={r.id}>
-                                    {r.name}
-                                </option>
-                            ))}
-                        </select>
+                    <select
+                        className="input"
+                        name="role_id"
+                        value={form.role_id}
+                        onChange={onChange}
+                    >
+                        {/* 👇 esta opción actúa como placeholder */}
+                        <option value="" disabled style={{ color: "#888" }} >
+                        Seleccionar rol...
+                        </option>
+
+                        {roles.map((r) => (
+                        <option key={r.id} value={r.id}>
+                            {r.name}
+                        </option>
+                        ))}
+                    </select>
                     )}
 
                     <button className={`btn btn-success`} type="submit">
@@ -239,12 +239,12 @@ export default function UserManagement() {
                     {/* Acciones secundarias en el borde derecho */}
                     <div className="inline-actions">
                         {isEditing && (
-                            <button className="btn" type="button" onClick={reset}>
+                            <button className="btn btn-danger" type="button" onClick={reset}>
                                 Cancelar
                             </button>
                         )}
                         <button className="btn" type="button" onClick={reload}>
-                            Recargar
+                            <IconResolver name={"Cached"} size={18} />
                         </button>
                     </div>
                 </form>
@@ -264,15 +264,18 @@ export default function UserManagement() {
                         {users.map((u) => (
                             <tr key={u.id}>
                                 <td>{u.username}</td>
-                                <td>{rolesById.get(u.role_id)?.name || u.role_name || u.role_id || "—"}</td>
+                                <td>{u.role_name || "—"}</td>
                                 <td>{u.icon || "—"}</td>
                                 <td>
-                                    <button className="btn btn-small" onClick={() => edit(u)}>
-                                        Editar
-                                    </button>
-                                    <button className="btn btn-small btn-danger" onClick={() => del(u)}>
-                                        Borrar
-                                    </button>
+                                    <div className="inline-actions">
+                                        <button className="btn btn-small" onClick={() => edit(u)}>
+                                            Editar
+                                        </button>
+                                        {u.username != "admin" && (
+                                        <button className="btn btn-small btn-danger" onClick={() => del(u)}>
+                                            Borrar
+                                        </button>)}
+                                    </div>
                                 </td>
                             </tr>
                         ))}

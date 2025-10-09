@@ -12,8 +12,8 @@ const DEFAULTS = {
 };
 
 export default function Settings() {
-  const { setTopbarStyle } = useApp?.() || { setTopbarStyle: () => {} };
-  const { updateConfig } = useConfig(); 
+  const { setTopbarStyle } = useApp?.() || { setTopbarStyle: () => { } };
+  const { updateConfig } = useConfig();
   const [form, setForm] = useState(DEFAULTS);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -52,14 +52,22 @@ export default function Settings() {
 
   const onChange = (e) => {
     const { name, value } = e.target;
-    setForm((p) => ({ ...p, [name]: value }));
-    if (name === "topbar_color") {
-      applyThemeVars(value);
-      setTopbarStyle?.({ color: value, text: form.topbar_text });
-    }
-    if (name === "document_title") {
-      document.title = value || DEFAULTS.document_title;
-    }
+    setForm(prev => {
+      const next = { ...prev, [name]: value };
+
+      if (name === "topbar_color") {
+        applyThemeVars(value);
+        setTopbarStyle?.({ color: value, text: next.topbar_text });
+      }
+      if (name === "topbar_text") {
+        setTopbarStyle?.({ color: next.topbar_color, text: value });
+      }
+      if (name === "document_title") {
+        document.title = value || DEFAULTS.document_title;
+      }
+
+      return next;
+    });
   };
 
   const restoreDefaults = () => {
@@ -109,6 +117,7 @@ export default function Settings() {
             <input
               type="text"
               name="topbar_text"
+              className="input"
               value={form.topbar_text}
               onChange={onChange}
               placeholder="BigIA 2.0"
@@ -136,6 +145,7 @@ export default function Settings() {
             <input
               type="text"
               name="document_title"
+              className="input"
               value={form.document_title}
               onChange={onChange}
               placeholder="BigIA 2.0"
@@ -148,6 +158,7 @@ export default function Settings() {
             <input
               type="text"
               name="login_message"
+              className="input"
               value={form.login_message}
               onChange={onChange}
               placeholder="Acceso a BigIA 2.0"

@@ -10,7 +10,7 @@ const { verifyToken, authorizePermission } = require('../middleware/auth');
 router.get('/', verifyToken, authorizePermission("can_view_users"), async (_req, res) => {
   try {
     const result = await pool.query(`
-      SELECT u.id, u.username, u.icon, r.name, u.role_id AS role
+      SELECT u.id, u.username, u.icon, r.name AS role_name, u.role_id
       FROM users u
       JOIN roles r ON u.role_id = r.id
       ORDER BY u.username
@@ -18,6 +18,20 @@ router.get('/', verifyToken, authorizePermission("can_view_users"), async (_req,
     res.json(result.rows);
   } catch (err) {
     console.error('❌ Error en GET /users:', err);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+});
+
+router.get('/roles', verifyToken, authorizePermission("can_view_users"), async (_req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT *
+      FROM roles
+    `);
+    console.debug('Me pidieron los roles.');
+    res.json(result.rows);
+  } catch (err) {
+    console.error('❌ Error en GET /users/roles:', err);
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 });

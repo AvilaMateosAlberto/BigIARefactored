@@ -26,6 +26,9 @@
   -webkit-mask-size: contain;     mask-size: contain;
 }
 
+.topbar-inner {
+  color: var(--on-primary, white)
+}
 /* Título */
 .login-form h2 {
   color: var(--text, #1d2433);

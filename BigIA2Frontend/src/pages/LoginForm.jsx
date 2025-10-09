@@ -1,5 +1,5 @@
 // src/pages/LoginPage.jsx
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useApp } from "../context/AppContext";
 import { useConfig } from "../context/ConfigContext";
@@ -7,17 +7,33 @@ import api from "../api/axiosInstance";
 import IconResolver from "../components/IconResolver";
 import "./pagesStyles/LoginForm.css";
 
+// 🔔 Importamos helpers centralizados
+import {
+  validatingCredentials,
+  invalidCredentials,
+  close as closeAlert,
+} from "../ui/alerts";
+
 export default function LoginPage() {
   const navigate = useNavigate();
   const { login } = useApp();
   const { config } = useConfig();
+
   const var_title = config?.topbar_text || "BigIA 2.0";
   const login_title = config?.login_message || "Acceso a BigIA 2.0";
+
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
+
+  // Cierra el Swal si el usuario navega fuera del login
+  useEffect(() => {
+    return () => {
+      try { closeAlert(); } catch {}
+    };
+  }, []);
 
   const togglePassword = () => setShowPassword((v) => !v);
 
@@ -27,13 +43,26 @@ export default function LoginPage() {
     setInfo("");
 
     try {
+      // Mostrar modal de validación
+      validatingCredentials();
+
       const res = await api.post("/auth/login", { username, password });
       const { accessToken, user, menu, permissions } = res.data;
+
+      // Login correcto → cerrar modal y navegar
+      closeAlert();
       login(user, menu, permissions, accessToken);
       navigate("/home", { replace: true });
     } catch (err) {
-      setError("Usuario o contraseña incorrectos");
       console.error("Error login:", err?.response || err);
+
+      // ⏱️ Añadimos un pequeño retardo visual antes de cerrar el loader
+      setTimeout(() => {
+        try { closeAlert(); } catch {}
+
+        setError("Usuario o contraseña incorrectos");
+        invalidCredentials();
+      }, 800); // 0.8 segundos → suficiente para que no “flashee”
     }
   };
 

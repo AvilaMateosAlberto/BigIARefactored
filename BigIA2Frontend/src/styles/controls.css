@@ -1,0 +1,24 @@
+/* Controles unificados */
+.input,
+input[type="text"].input,
+input[type="email"].input,
+input[type="password"].input,
+input[type="number"].input,
+textarea.input,
+select.input {
+  background: var(--input-bg);
+  color: var(--input-text);
+  border: 1px solid var(--input-border);
+  border-radius: 12px;
+  padding: 10px 12px;
+  height: 44px;
+  outline: none;
+  transition: border-color .15s ease, box-shadow .15s ease, background .15s ease, color .15s ease;
+}
+
+.input::placeholder { color: var(--input-placeholder); }
+
+.input:focus {
+  border-color: var(--input-focus);
+  box-shadow: 0 0 0 3px var(--input-shadow);
+}

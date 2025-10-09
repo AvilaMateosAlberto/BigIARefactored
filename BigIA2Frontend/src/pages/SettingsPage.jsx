@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import api from "../api/axiosInstance";
 import { useApp } from "../context/AppContext";
+import { useConfig } from "../context/ConfigContext";
 import "./pagesStyles/SettingsPage.css"; // <-- asegúrate de la ruta
 
 const DEFAULTS = {
@@ -12,7 +13,7 @@ const DEFAULTS = {
 
 export default function Settings() {
   const { setTopbarStyle } = useApp?.() || { setTopbarStyle: () => {} };
-
+  const { updateConfig } = useConfig(); 
   const [form, setForm] = useState(DEFAULTS);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -82,6 +83,7 @@ export default function Settings() {
       applyThemeVars(data.topbar_color);
       setTopbarStyle?.({ color: data.topbar_color, text: data.topbar_text });
       if (data.document_title) document.title = data.document_title;
+      updateConfig(data);
       alert("Guardado");
     } catch (e) {
       console.error("POST /settings", e);

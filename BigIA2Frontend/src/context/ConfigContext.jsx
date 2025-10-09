@@ -22,14 +22,16 @@ export function ConfigProvider({ children }) {
   // Helpers de color/contraste
   const hexToRgb = (hex) => {
     if (!hex) return [196, 0, 0];
-    const h = hex.replace("#", "");
-    const full = h.length === 3 ? h.split("").map((c) => c + c).join("") : h.padStart(6, "0");
+    const h = hex.replace('#', '');
+    const full = h.length === 3 ? h.split('').map(c => c + c).join('') : h.padStart(6, '0');
     const n = (i) => parseInt(full.slice(i, i + 2), 16);
     return [n(0), n(2), n(4)];
   };
-
   const relLuminance = ([r, g, b]) => {
-    const f = (u) => (u <= 0.03928 ? u / 12.92 : Math.pow((u + 0.055) / 1.055, 2.4));
+    const f = (u) => {
+      u /= 255;
+      return u <= 0.03928 ? u / 12.92 : Math.pow((u + 0.055) / 1.055, 2.4);
+    };
     const [R, G, B] = [f(r), f(g), f(b)];
     return 0.2126 * R + 0.7152 * G + 0.0722 * B;
   };
@@ -46,13 +48,10 @@ export function ConfigProvider({ children }) {
     const root = document.documentElement;
     root.style.setProperty("--topbar-bg", color);
     root.style.setProperty("--primary", color);
+    root.style.setProperty("--brand", color);
+    const fg = relLuminance(hexToRgb(color)) > 0.5 ? "#000000ff" : "#ffffff";
+    root.style.setProperty("--on-primary", fg);
 
-    const fg = relLuminance(hexToRgb(color)) > 0.5 ? "#111111" : "#ffffff";
-    root.style.setProperty("--topbar-fg", fg);
-
-    // Modo tema
-    const mode = config.theme_mode === "dark" ? "dark" : "light";
-    document.documentElement.setAttribute("data-theme", mode);
   }, [config]);
 
   // Cargar config desde endpoint si no existe en localStorage

@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useApp } from "../context/AppContext";
+import { useConfig } from "../context/ConfigContext";
 import api from "../api/axiosInstance";
 import IconResolver from "../components/IconResolver";
 import "./pagesStyles/LoginForm.css";
@@ -9,7 +10,9 @@ import "./pagesStyles/LoginForm.css";
 export default function LoginPage() {
   const navigate = useNavigate();
   const { login } = useApp();
-
+  const { config } = useConfig();
+  const var_title = config?.topbar_text || "BigIA 2.0";
+  const login_title = config?.login_message || "Acceso a BigIA 2.0";
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -37,13 +40,13 @@ export default function LoginPage() {
   return (
     <div className="login-page">
       <header className="top-bar">
-        <div className="topbar-inner">BigIA 2.0</div>
+        <div className="topbar-inner">{var_title}</div>
       </header>
 
       <main className="login-container">
         <form onSubmit={submit} className="login-form">
           <div className="login-logo" aria-hidden="true" />
-          <h2>Acceso a BigIA 2.0</h2>
+          <h2>{login_title}</h2>
 
           <div className="input-wrapper">
             <input

@@ -1,14 +1,17 @@
 // src/components/Topbar.jsx
 import React from "react";
 import "./componentsStyles/Topbar.css";
+import { useConfig } from "../context/ConfigContext";
 
 export default function Topbar({
-  title = "BigIA 2.0",
   leftSlot,
   rightSlot,
   onBurger,
   isSidebarOpen = false,
 }) {
+  const { config } = useConfig();
+  const title = config?.topbar_text || "BigIA 2.0";
+  
   return (
     <header className="topbar" role="banner" style={{ height: "var(--topbar-h, 68px)" }}>
       <div className="topbar-left">

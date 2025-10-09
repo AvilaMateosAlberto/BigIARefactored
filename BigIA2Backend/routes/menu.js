@@ -99,9 +99,16 @@ async function rebuildDescendantLinkRoutes(folderId) {
 router.get('/', verifyToken, authorizePermission("can_manage_endpoints"), async (_req, res) => {
   try {
     const { rows } = await pool.query(
-      `SELECT *
-       FROM menu_items
-       ORDER BY parent_id NULLS FIRST, position, id`
+      `SELECT 
+          m.*,
+          p.name AS permission_name
+      FROM menu_items m
+      LEFT JOIN permissions p
+          ON m.permission_id = p.id
+      ORDER BY 
+          m.parent_id NULLS FIRST,
+          m.position,
+    m.id`
     );
     res.json(rows);
   } catch (err) {
@@ -110,6 +117,17 @@ router.get('/', verifyToken, authorizePermission("can_manage_endpoints"), async 
   }
 });
 
+router.get('/permissions', verifyToken, authorizePermission("can_manage_endpoints"), async (_req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT * FROM permissions`
+    );
+    res.json(rows);
+  } catch (err) {
+    console.error('❌ GET /menu/permissions error:', err);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+});
 // ============ CREAR ============
 router.post('/', verifyToken, authorizePermission("can_manage_endpoints"), async (req, res) => {
   try {
@@ -167,7 +185,7 @@ router.put('/reorder', verifyToken, authorizePermission("can_manage_endpoints"),
     if (!Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ error: 'Formato inválido: se espera items[] no vacío' });
     }
-
+    console.error(items);
     // Normaliza
     const normalized = items.map((it, idx) => {
       const id = Number(it?.id);
@@ -254,6 +272,7 @@ router.put('/:id', verifyToken, authorizePermission("can_manage_endpoints"), asy
   try {
     const { id } = req.params;
     let { label, url, route, icon, permission_id, type, parent_id } = req.body;
+    console.error("%s", type);
 
     const currentRes = await pool.query(
       `SELECT id, route, type, parent_id, position FROM menu_items WHERE id = $1`,
@@ -316,7 +335,7 @@ router.put('/:id', verifyToken, authorizePermission("can_manage_endpoints"), asy
            url = $2,
            route = $3,
            icon = $4,
-           permission_id = $5
+           permission_id = $5,
            type = $6,
            parent_id = $7,
            position = COALESCE($8, position)

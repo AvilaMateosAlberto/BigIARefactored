@@ -16,6 +16,7 @@ import EndpointsManager from "./pages/EndpointsManager";
 import IconResolver from "./components/IconResolver";
 import { useApp } from "./context/AppContext";
 import UserManagement from "./pages/UserManagement";
+import ReportPage from "./pages/ReportPage";
 
 /* ============== Tema ============== */
 function applyTheme(next) {
@@ -49,10 +50,11 @@ export default function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route element={<RequireAuth><AppShell /></RequireAuth>}>
           <Route path="/" element={<Navigate to="/home" replace />} />
-          <Route path="/home" element={<HomePage />} />
-          <Route path="/configuracion/personalizacion" element={<SettingsPage />} />
-          <Route path="/configuracion/usuarios" element={<UserManagement />} />
-          <Route path="/configuracion/endpoints" element={<EndpointsManager />} />
+          <Route path="/home" element={<HomePage />} handle={{ title: "Inicio"}}/>
+          <Route path="/configuracion/personalizacion" element={<SettingsPage handle={{ title: "Personalización"}}/>} />
+          <Route path="/configuracion/usuarios" element={<UserManagement handle={{ title: "Usuarios"}}/>} />
+          <Route path="/configuracion/endpoints" element={<EndpointsManager handle={{ title: "Endpoints"}}/>} />
+          <Route path="/reportes" element={<ReportPage />} />
           {/* 👇 TODO lo demás viene del menú y lo resuelve DynamicRouteRenderer */}
           <Route path="*" element={<DynamicRouteRenderer />} />
         </Route>

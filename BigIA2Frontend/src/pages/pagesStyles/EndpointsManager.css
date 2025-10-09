@@ -48,8 +48,13 @@ button:active { transform: translateY(1px); }
 .btn-danger:hover { background: var(--danger-hover); }
 
 /* Lista con scroll */
-.table-wrap { width: 100%; flex: 1 1 auto; min-height: 0; overflow: auto; }
-.table { width: 100%; border-collapse: separate; border-spacing: 0 6px; }
+.table-wrap { 
+  width: 100%; 
+  flex: 1 1 auto; 
+  min-height: 0; 
+  overflow: auto; 
+  text-align: center;}
+.table { width: 95%; border-collapse: separate; margin:auto; text-align: left; border-spacing: 0 6px; }
 .table thead th {
   text-align: left; font-weight: 600; font-size: 13px; color: var(--text-2);
   position: sticky; top: 0; background: var(--surface); z-index: 1; padding: 8px 10px;

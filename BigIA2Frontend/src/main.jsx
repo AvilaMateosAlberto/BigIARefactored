@@ -7,6 +7,9 @@ import './styles/controls.css';
 import { AppProvider } from './context/AppContext'; // ✅ importa tu provider
 import { ConfigProvider } from './context/ConfigContext'; // ✅ importa tu provider
 import SplashGate from "./components/SplashGate.jsx";
+import { bootApplyBrandingFromCache } from "./utils/favicon";
+
+bootApplyBrandingFromCache();
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>

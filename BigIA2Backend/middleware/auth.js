@@ -11,7 +11,7 @@ function verifyToken(req, res, next) {
   }
   const token = auth.split(/\s+/,2)[1];
   try {
-    console.error('Token recibido:', token);
+    //console.error('Token recibido:', token);
     req.user = jwt.verify(token, ACCESS_SECRET);
     next();
   } catch (err){

@@ -1,18 +1,25 @@
-/* src/components/componentsStyles/Splash.css */
-
 .splash-overlay {
   position: fixed;
   inset: 0;
   z-index: 9999;
-  display: grid;
-  place-items: center;
-  gap: 1rem;
-  /* Fondo según tema */
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background: var(--splash-bg, #fff);
   color: var(--splash-fg, #111);
 }
 
-/* Ajusta colores en función del data-theme que ya usas */
+/* Contenedor interno compacto (centra logo + spinner) */
+.splash-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem; /* más juntas */
+  transform: translateY(-10%);
+}
+
+/* Tema claro/oscuro */
 :root[data-theme="light"] .splash-overlay {
   --splash-bg: #ffffff;
   --splash-fg: #111111;
@@ -23,18 +30,22 @@
   --splash-fg: #eeeeee;
 }
 
-.splash-logo {
-  width: min(220px, 45vw);
-  height: auto;
+/* Logo tintado */
+.splash-logo--tinted {
+  width: 70px;
+  height: 70px;
+  background: var(--brand, #c40000);
+  -webkit-mask: url("/logoBigIA.svg") no-repeat center / contain;
+  mask: url("/logoBigIA.svg") no-repeat center / contain;
+  filter: drop-shadow(0 2px 6px rgba(0,0,0,.2));
   user-select: none;
   -webkit-user-drag: none;
-  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.15));
 }
 
-/* Spinner tipo Kibana (borde animado) */
+/* Spinner */
 .splash-spinner {
-  width: 42px;
-  height: 42px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   border: 3px solid rgba(0,0,0,0.15);
   border-top-color: currentColor;
@@ -47,7 +58,7 @@
   to { transform: rotate(360deg); }
 }
 
-/* Accesibilidad: si el usuario prefiere menos animación, la reducimos */
+/* Accesibilidad */
 @media (prefers-reduced-motion: reduce) {
   .splash-spinner {
     animation: none;

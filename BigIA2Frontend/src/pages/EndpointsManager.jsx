@@ -24,6 +24,7 @@ export default function EndpointsManager() {
 
   // --- Estado principal ---
   const [items, setItems] = useState([]);
+  const [permissionslist, setPermissionslist] = useState([]);
   const [selected, setSelected] = useState(null);
   const [form, setForm] = useState({
     label: "",
@@ -46,8 +47,11 @@ export default function EndpointsManager() {
   async function loadItems() {
     setLoadingState(true);
     try {
-      const { data } = await api.get("/menu");
-      setItems(data || []);
+      const { data: itemsData } = await api.get("/menu");
+      setItems(itemsData || []);
+
+      const { data: permissionsData } = await api.get("/menu/permissions");
+      setPermissionslist(permissionsData || []);
     } catch (e) {
       console.error("Error cargando menú:", e?.response?.data || e.message);
       apiError(e, "No se pudo cargar el listado");
@@ -55,6 +59,7 @@ export default function EndpointsManager() {
       setLoadingState(false);
     }
   }
+
   useEffect(() => { loadItems(); }, []);
 
   async function refreshContextMenu() {
@@ -110,7 +115,6 @@ export default function EndpointsManager() {
         permission_id: row.permission_id ?? null,
         type: row.type || "link",
         parent_id: row.parent_id ?? null,
-        nivel_requerido: row.nivel_requerido ?? 1,
         position: row.position ?? 0,
       });
       setRouteError("");
@@ -123,7 +127,6 @@ export default function EndpointsManager() {
         permission_id: null,
         type: "link",
         parent_id: null,
-        nivel_requerido: 1,
         position: 0,
       });
       setRouteError("");
@@ -311,7 +314,7 @@ export default function EndpointsManager() {
       const payload = items
         .slice()
         .sort((a, b) => (a.parent_id ?? 0) - (b.parent_id ?? 0) || (a.position ?? 0) - (b.position ?? 0))
-        .map(it => ({ id: it.id, position: it.position ?? 0, parent_id: it.parent_id ?? null }));
+        .map(it => ({ id: it.id, position: it.position+1 ?? 1, parent_id: it.parent_id ?? null }));
 
       loading("Guardando orden…");
       await api.put("/menu/reorder", { items: payload });
@@ -357,10 +360,8 @@ export default function EndpointsManager() {
                   <th style={{ width: 30 }}>⋮⋮</th>
                   <th>Label</th>
                   <th>Tipo</th>
-                  <th>Carpeta</th>
                   <th>Ruta</th>
-                  <th>Pos</th>
-                  <th>Nivel</th>
+                  <th>Permiso requerido</th>
                 </tr>
               </thead>
               <tbody>
@@ -385,10 +386,8 @@ export default function EndpointsManager() {
                       {row.label}
                     </td>
                     <td>{row.type === "folder" ? "Carpeta" : "Link"}</td>
-                    <td>{row.parent_id ? (parentNameMap.get(row.parent_id) ?? "—") : "—"}</td>
                     <td className="route-cell">{row.route ?? "—"}</td>
-                    <td>{row.position}</td>
-                    <td>{row.nivel_requerido}</td>
+                    <td>{row.permission_name}</td>
                   </tr>
                 ))}
               </tbody>
@@ -464,15 +463,18 @@ export default function EndpointsManager() {
           </label>
 
           <label>
-            Rol:
+            Permiso requerido:
             <select
               className="input"
-              name="nivel_requerido"
-              value={form.nivel_requerido}
+              name="permission_id"
+              value={form.permission_id}
               onChange={handleChange}
             >
-              <option value={1}>User</option>
-              <option value={2}>Admin</option>
+              {permissionslist.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
             </select>
           </label>
 

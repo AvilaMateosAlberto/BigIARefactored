@@ -29,7 +29,7 @@ router.get('/roles', verifyToken, authorizePermission("can_view_users"), async (
       SELECT *
       FROM roles
     `);
-    console.debug('Me pidieron los roles.');
+    // console.debug('Me pidieron los roles.');
     res.json(result.rows);
   } catch (err) {
     console.error('❌ Error en GET /users/roles:', err);
@@ -65,6 +65,71 @@ router.post('/', verifyToken, authorizePermission("can_create_users"), async (re
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 });
+
+router.put('/:id', verifyToken, authorizePermission("can_create_users"), async (req, res) => {
+  const { id } = req.params;
+  const { username, password, role_id, icon } = req.body;
+
+  if (!username && !password && !role_id && !icon) {
+    return res.status(400).json({ error: 'No se proporcionaron campos para actualizar' });
+  }
+
+  try {
+    // --- Preparar los campos a actualizar ---
+    const updates = [];
+    const values = [];
+    let idx = 1;
+
+    if (username) {
+      updates.push(`username = $${idx++}`);
+      values.push(username);
+    }
+
+    if (password) {
+      const hashedPassword = await bcrypt.hash(password, 10);
+      updates.push(`password = $${idx++}`);
+      values.push(hashedPassword);
+    }
+
+    if (role_id) {
+      // Validar que el rol exista
+      const roleRes = await pool.query('SELECT id FROM roles WHERE id = $1', [role_id]);
+      if (roleRes.rows.length === 0) {
+        return res.status(400).json({ error: 'Rol no válido' });
+      }
+      updates.push(`role_id = $${idx++}`);
+      values.push(role_id);
+    }
+
+    if (icon !== undefined) {
+      updates.push(`icon = $${idx++}`);
+      values.push(icon);
+    }
+
+    if (updates.length === 0) {
+      return res.status(400).json({ error: 'No hay campos válidos para actualizar' });
+    }
+
+    // --- Ejecutar UPDATE ---
+    values.push(id); // último valor para WHERE
+    const query = `UPDATE users SET ${updates.join(', ')} WHERE id = $${idx} RETURNING id, username, role_id, icon`;
+    const result = await pool.query(query, values);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
+
+    res.json({ user: result.rows[0] });
+
+  } catch (err) {
+    console.error('❌ Error al modificar usuario:', err);
+    if (err.code === '23505') { // username duplicado
+      return res.status(409).json({ error: 'El nombre de usuario ya existe' });
+    }
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+});
+
 
 router.delete('/:id', verifyToken, authorizePermission("can_delete_users"), async (req, res) => {
   const { id } = req.params;

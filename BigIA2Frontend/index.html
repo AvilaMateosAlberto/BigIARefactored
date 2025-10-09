@@ -1,51 +1,80 @@
 <!doctype html>
 <html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- ayuda a inputs/scrollbars en ambos temas -->
+    <meta name="color-scheme" content="light dark" />
 
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <!-- ayuda a inputs/scrollbars en ambos temas -->
-  <meta name="color-scheme" content="light dark">
-  <link rel="icon" href="/logoBigIA.svg" />
-  <title>BigIA 2.0</title>
-  <script>
-    (function () {
-      try {
-        var root = document.documentElement;
+    <!-- Sembrado inicial (se actualizará en runtime con el color real) -->
+    <link id="app-favicon" rel="icon" type="image/svg+xml" href="/logoBigIA.svg" />
+    <link id="app-mask-icon" rel="mask-icon" href="/logoBigIA.svg" color="#c40000" />
+    <meta name="theme-color" content="#c40000" />
 
-        // 1) Tema inicial: preferencia explícita > sistema
-        var savedTheme = localStorage.getItem("pref_theme"); // "light" | "dark" | null
-        var media = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)");
-        var systemTheme = media && media.matches ? "dark" : "light";
-        var theme = savedTheme || systemTheme;
+    <title>BigIA 2.0</title>
 
-        root.setAttribute("data-theme", theme);
-        root.style.colorScheme = theme;
+    <script>
+      (function () {
+        try {
+          var root = document.documentElement;
 
-        // 2) Marca desde cache (si existe)
-        var brand = localStorage.getItem("brand_color");
-        if (brand) root.style.setProperty("--brand", brand);
+          // 1) Tema inicial: preferencia explícita > sistema
+          var savedTheme = localStorage.getItem("pref_theme"); // "light" | "dark" | null
+          var media = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)");
+          var systemTheme = media && media.matches ? "dark" : "light";
+          var theme = savedTheme || systemTheme;
 
-        // 3) (Opcional) Título/topbar desde cache público
-        var topbarText = localStorage.getItem("brand_topbar_text");
-        if (topbarText) document.title = topbarText;
+          root.setAttribute("data-theme", theme);
+          root.style.colorScheme = theme;
 
-        // 4) Si no hay preferencia guardada, sigue cambios del sistema
-        if (!savedTheme && media && typeof media.addEventListener === 'function') {
-          media.addEventListener('change', function (e) {
-            var next = e.matches ? 'dark' : 'light';
-            root.setAttribute('data-theme', next);
-            root.style.colorScheme = next;
-          });
+          // 2) Marca desde cache (compat con distintas claves)
+          //    - "config"          -> nueva refactor (objeto con topbar_color)
+          //    - "bigia_config"    -> variante previa
+          //    - "branding_cache_v1" -> legacy original (topbar_color plano)
+          var cfg =
+            JSON.parse(localStorage.getItem("config") || "null") ||
+            JSON.parse(localStorage.getItem("bigia_config") || "null");
+          var legacy = JSON.parse(localStorage.getItem("branding_cache_v1") || "{}");
+
+          var brand =
+            (cfg && cfg.topbar_color) ||
+            legacy.topbar_color ||
+            localStorage.getItem("brand_color") || // ultra-legacy
+            "#c40000";
+
+          // Aplicar --brand cuanto antes para evitar "flash" sin color corporativo
+          root.style.setProperty("--brand", brand);
+
+          // 3) Título opcional desde cache pública
+          var topTitle =
+            (cfg && cfg.document_title) ||
+            localStorage.getItem("brand_topbar_text");
+          if (topTitle) document.title = topTitle;
+
+          // 4) Actualizar meta theme-color y mask-icon ya en el primer paint
+          var metaTheme = document.querySelector('meta[name="theme-color"]');
+          if (metaTheme) metaTheme.setAttribute("content", brand);
+
+          var mask = document.getElementById("app-mask-icon");
+          if (mask) mask.setAttribute("color", brand);
+
+          // 5) Si no hay preferencia guardada, seguir cambios del sistema
+          if (!savedTheme && media && typeof media.addEventListener === "function") {
+            media.addEventListener("change", function (e) {
+              var next = e.matches ? "dark" : "light";
+              root.setAttribute("data-theme", next);
+              root.style.colorScheme = next;
+            });
+          }
+        } catch (e) {
+          /* noop */
         }
-      } catch (e) { /* noop */ }
-    })();
-  </script>
-</head>
+      })();
+    </script>
+  </head>
 
-<body>
-  <div id="root"></div>
-  <script type="module" src="/src/main.jsx"></script>
-</body>
-
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
 </html>

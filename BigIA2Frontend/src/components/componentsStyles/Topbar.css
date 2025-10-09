@@ -16,10 +16,13 @@
   justify-content: space-between;
 
   height: var(--topbar-h);
-  padding: 0 20px; /* padding lateral general */
+  padding: 0 20px;
   background: var(--topbar-bg, var(--brand, #c40000));
   color: var(--on-primary, #ffffff);
   border-bottom: 1px solid color-mix(in srgb, #000 15%, transparent);
+
+  /* necesario para centrar con absolute el título */
+  position: sticky;
 }
 
 /* Izquierda: hamburguesa + título alineados */
@@ -27,49 +30,77 @@
   display: flex;
   align-items: center;
   gap: 14px;
-  /* Desplazamiento adicional para que coincida con tu original */
-  margin-left: 6px; /* suma 20px + 6px = 26px reales de espacio total */
+  margin-left: 6px; /* 20px + 6px = 26px reales de margen visual */
 }
 
-/* Botón hamburguesa */
+/* ------------------------------
+   Botón hamburguesa (alineado perfecto)
+   ------------------------------ */
 .topbar-burger {
-  display: inline-grid;
-  place-items: center;
+  display: flex;
+  flex-direction: column;      /* ← apila las líneas una debajo de otra */
+  align-items: center;         /* centrado horizontal */
+  justify-content: center;     /* centrado vertical */
   width: 40px;
   height: 40px;
+  padding: 0;
   border-radius: 10px;
-  background: none;
+  background: transparent;
   color: currentColor;
   border: none;
   cursor: pointer;
+  outline: none;
   outline-offset: 2px;
-  transition: background .15s ease, transform .05s ease;
+  transition: background 0.15s ease, transform 0.05s ease;
+  box-sizing: border-box;
 }
+
 .topbar-burger:hover {
   background: color-mix(in srgb, #fff 18%, transparent);
 }
+
 .topbar-burger:active {
   transform: translateY(1px);
 }
+
 .topbar-burger:focus-visible {
   outline: 2px solid color-mix(in srgb, var(--brand) 60%, #fff);
 }
 
-/* Líneas de la hamburguesa */
+/* Líneas del icono hamburguesa */
 .burger-line {
   width: 22px;
   height: 2px;
   background: currentColor;
   border-radius: 2px;
   display: block;
-  margin: 3px 0;
+  margin: 3px 0; /* separación uniforme vertical */
 }
 
-/* Título */
+/* Título (lado izquierdo / marca) */
 .topbar-title {
   font-weight: 700;
-  letter-spacing: .2px;
+  letter-spacing: 0.2px;
   font-size: 18px;
+  line-height: 1;
+}
+
+/* ------------------------------
+   Centro: título de la página actual
+   ------------------------------ */
+.topbar-center {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  pointer-events: none; /* no bloquea los clics de los lados */
+  text-align: center;
+}
+
+.page-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--topbar-fg, #fff);
   line-height: 1;
 }
 
@@ -87,8 +118,9 @@
   gap: 8px;
   background: color-mix(in srgb, #000 10%, transparent);
   padding: 6px 12px;
-  border-radius: 999px
+  border-radius: 999px;
 }
+
 .user-icon {
   display: inline-grid;
   place-items: center;
@@ -96,16 +128,25 @@
   height: 18px;
   line-height: 0;
 }
+
 .user-name {
   font-size: 14px;
   font-weight: 600;
   margin-right: 5px;
 }
+
+/* Botones de iconos en la topbar */
 .icon-btn {
   border: 0;
   color: var(--on-primary, #ffffff);
   background-color: transparent;
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  transition: background 0.15s ease;
 }
 .icon-btn:hover {
-  background-color: transparent;
+  background-color: color-mix(in srgb, #fff 14%, transparent);
 }

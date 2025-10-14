@@ -14,6 +14,8 @@ const menuRoutes = require('./routes/menu');
 const settingsRoutes = require('./routes/settings');
 const revealjsApiRoutes = require('./routes/revealjsapi');
 const { verifyToken } = require('./middleware/auth');
+const errorHandler = require('./middleware/errorHandler');
+const { NotFoundError } = require('./errors/customErrors'); // <-- CAMBIO 1: Importamos el error específico para 404
 const app = express();
 
 /* =========================
@@ -34,11 +36,11 @@ const PUBLIC = [
   { method: 'POST', rx: /^\/api\/auth\/login$/ },
   { method: 'POST', rx: /^\/api\/auth\/refresh$/ },   // <- refresh NO requiere access token
   { method: 'POST', rx: /^\/api\/auth\/logout$/ },    // <- logout debe poder hacerse sin token válido
-  { method: 'GET',  rx: /^\/api\/auth\/verify$/ },    // <- verificación basada en cookie rt
+  { method: 'GET', rx: /^\/api\/auth\/verify$/ },    // <- verificación basada en cookie rt
 
   // Ajustes públicos y health
-  { method: 'GET',  rx: /^\/api\/settings\/public$/ },
-  { method: 'GET',  rx: /^\/api\/health$/ },
+  { method: 'GET', rx: /^\/api\/settings\/public$/ },
+  { method: 'GET', rx: /^\/api\/health$/ },
 ];
 
 /* =========================
@@ -63,12 +65,13 @@ app.use((req, res, next) => {
 /* =========================
    Healthcheck
    ========================= */
-app.get('/api/health', async (_req, res) => {
+app.get('/api/health', async (_req, res, next) => { // Añadimos 'next' para el manejo de errores
   try {
     await db.query('SELECT 1');
     res.json({ ok: true, db: 'up' });
   } catch (e) {
-    res.status(503).json({ ok: false, db: 'down', error: e.message });
+    // Si la base de datos falla, pasamos el error al manejador central
+    next(e);
   }
 });
 
@@ -84,14 +87,16 @@ app.use('/revealjsapi', revealjsApiRoutes); // fuera de /api => no le afecta el 
 /* =========================
    404 y handler de errores
    ========================= */
-app.use((req, res) => {
-  res.status(404).json({ error: 'Not found' });
+
+// <-- CAMBIO 2: Lógica de 404 y error handler modificada
+// Si ninguna ruta anterior coincide, este middleware se ejecuta y crea un error 404.
+app.use((req, res, next) => {
+  next(new NotFoundError(`No se puede encontrar ${req.originalUrl} en este servidor.`));
 });
 
-app.use((err, _req, res, _next) => {
-  console.error('❌ Unhandled error:', err);
-  res.status(500).json({ error: 'Error interno del servidor' });
-});
+// El manejador de errores centralizado se encarga de todos los errores pasados a través de next().
+// ¡Debe ser el último middleware!
+app.use(errorHandler);
 
 
 /* =========================

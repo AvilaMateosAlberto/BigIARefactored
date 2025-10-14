@@ -97,7 +97,7 @@
   margin-top: 16px;
   margin-bottom: 8px;
   align-self: center;
-  background: var(--primary, #c40000);
+  background: var(--topbar-bg, #c40000);
   border: none;
   border-radius: 8px;
   color: var(--topbar-fg, #fff);

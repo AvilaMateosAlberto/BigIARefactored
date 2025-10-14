@@ -8,15 +8,16 @@
   },
   "dependencies": {
     "bcrypt": "^5.x",
+    "compression": "^1.7.4",
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^10.x",
     "express": "^4.x",
-    "jsonwebtoken": "^8.x",
-    "pg": "^8.x",
-    "multer": "^1.4.5-lts.1",
+    "express-rate-limit": "^8.1.0",
     "form-data": "^4.0.0",
-    "compression": "^1.7.4",
-    "cookie-parser": "^1.4.7"
+    "jsonwebtoken": "^8.x",
+    "multer": "^1.4.5-lts.1",
+    "pg": "^8.x"
   },
   "devDependencies": {
     "nodemon": "^2.x"

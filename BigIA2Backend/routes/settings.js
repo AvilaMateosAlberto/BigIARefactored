@@ -1,8 +1,8 @@
-// src/backend/routes/settings.js
 const express = require('express');
 const router = express.Router();
 const pool = require('../db');
 const { verifyToken, authorizePermission } = require('../middleware/auth');
+const { BadRequestError } = require('../errors/customErrors');
 
 const DEFAULTS = {
   topbar_color: '#c40000',
@@ -11,11 +11,13 @@ const DEFAULTS = {
   login_message: 'Acceso a BigIA 2.0',
 };
 
-// Extrae la configuración de la aplicación de base de datos
+// Utilidades de saneado
+const isHex = (c) => /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(c || '');
+const clampStr = (s, n) => (s ?? '').toString().slice(0, n);
+
 async function getAppConfig() {
   const { rows } = await pool.query(
-    `SELECT topbar_color, topbar_text, document_title, login_message
-     FROM app_config WHERE id = 1`
+    `SELECT topbar_color, topbar_text, document_title, login_message FROM app_config WHERE id = 1`
   );
   const cfg = rows[0] || DEFAULTS;
   return {
@@ -26,60 +28,55 @@ async function getAppConfig() {
   };
 }
 
-// Utilidades de saneado
-const isHex = (c) => /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(c || '');
-const clampStr = (s, n) => (s ?? '').toString().slice(0, n);
-
-// ====== PÚBLICO: lo usamos en el login/pre-bootstrap ======
-router.get('/public', async (_req, res) => {
+// GET /api/settings/public
+router.get('/public', async (req, res, next) => {
   try {
     res.json(await getAppConfig());
-  } catch (e) {
-    console.error(e);
-    res.json(DEFAULTS);
+  } catch (err) {
+    // Si la BD falla aquí, es mejor que devuelva un 500 que los defaults
+    next(err);
   }
 });
 
-// ====== PRIVADO (admin) ======
-router.get('/', verifyToken, authorizePermission('can_view_admin_dashboards'), async (_req, res) => {
+// GET /api/settings (privado)
+router.get('/', verifyToken, authorizePermission('can_view_admin_dashboards'), async (req, res, next) => {
   try {
-    console.error("Me pidieron los settings UwU");
     res.json(await getAppConfig());
-  } catch (e) {
-    console.error(e);
-    res.status(500).json({ error: 'settings_read_failed' });
+  } catch (err) {
+    next(err);
   }
 });
-router.post('/', verifyToken, authorizePermission('can_view_admin_dashboards'), async (req, res) => {
-  try {
-    const {
-      topbar_color,
-      topbar_text,
-      document_title,
-      login_message,
-    } = req.body || {};
 
-    const color = isHex(topbar_color) ? topbar_color : DEFAULTS.topbar_color;
-    const text = clampStr(topbar_text, 60) || DEFAULTS.topbar_text;
-    const title = clampStr(document_title, 60) || DEFAULTS.document_title;
-    const loginMsg = clampStr(login_message, 120) || DEFAULTS.login_message;
+// PUT /api/settings - Actualizar configuración (protegido)
+// Cambiado de POST a PUT por ser una acción idempotente de actualización
+router.put('/', verifyToken, authorizePermission('can_view_admin_dashboards'), async (req, res, next) => {
+  try {
+    const { topbar_color, topbar_text, document_title, login_message } = req.body || {};
+
+    // Validaciones
+    if (!topbar_color || !topbar_text || !document_title || !login_message) {
+      throw new BadRequestError('Todos los campos de configuración son obligatorios.');
+    }
+    if (!isHex(topbar_color)) {
+      throw new BadRequestError('El color de la barra superior no es un código hexadecimal válido.');
+    }
+
+    const text = clampStr(topbar_text, 60);
+    const title = clampStr(document_title, 60);
+    const loginMsg = clampStr(login_message, 120);
 
     const { rows } = await pool.query(
-      `UPDATE app_config
-         SET topbar_color = $1,
-             topbar_text = $2,
-             document_title = $3,
-             login_message = $4
-       WHERE id = 1
-       RETURNING topbar_color, topbar_text, document_title, login_message`,
-      [color, text, title, loginMsg]
+      `UPDATE app_config 
+       SET topbar_color = $1, topbar_text = $2, document_title = $3, login_message = $4 
+       WHERE id = 1 
+       RETURNING *`,
+      [topbar_color, text, title, loginMsg]
     );
-
     res.json(rows[0]);
-  } catch (e) {
-    console.error(e);
-    res.status(500).json({ error: 'settings_write_failed' });
+  } catch (err) {
+    next(err);
   }
 });
 
 module.exports = router;
+

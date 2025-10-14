@@ -27,7 +27,6 @@ api.interceptors.request.use((config) => {
 
 // (Opcional) Refresh automático en 401.
 // Descomenta este bloque cuando quieras activarlo:
-/*
 let isRefreshing = false;
 let queue = [];
 
@@ -42,14 +41,21 @@ api.interceptors.response.use(
 
     if (!isRefreshing) {
       isRefreshing = true;
+
       try {
-        const { data } = await api.post("/auth/refresh"); // usa cookie httpOnly
+        const { data } = await api.post("/auth/refresh"); // cookie httpOnly
         setAccessToken(data.accessToken);
-        queue.forEach((cb) => cb());
+
+        // resolvemos todas las promesas pendientes
+        queue.forEach(({ resolve }) => resolve());
         queue = [];
+
         return api(config);
       } catch (e) {
+        // rechazamos todas las promesas pendientes
+        queue.forEach(({ reject }) => reject(e));
         queue = [];
+
         window.dispatchEvent(new Event("sessionExpired"));
         return Promise.reject(e);
       } finally {
@@ -57,11 +63,17 @@ api.interceptors.response.use(
       }
     }
 
-    return new Promise((resolve) => {
-      queue.push(() => resolve(api(config)));
+    // Si ya hay un refresh en curso, devolvemos promesa que se resolverá o rechazará después
+    return new Promise((resolve, reject) => {
+      queue.push({
+        resolve: () => resolve(api(config)),
+        reject: (err) => reject(err),
+      });
     });
   }
 );
-*/
+
+
+
 
 export default api;

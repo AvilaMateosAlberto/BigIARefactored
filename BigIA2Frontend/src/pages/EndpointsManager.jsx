@@ -1,5 +1,6 @@
 // src/pages/EndpointsManager.jsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { uniqueNamesGenerator, adjectives, colors, animals } from "unique-names-generator";
 import api from "../api/axiosInstance";
 import { useApp } from "../context/AppContext";
 import IconPicker from "../components/IconPicker";
@@ -29,18 +30,16 @@ export default function EndpointsManager() {
   const [form, setForm] = useState({
     label: "",
     url: "",
-    route: "",
+    route: buildAutoRoute(),
     icon: "",
-    permission_id: null,
+    permission_id: "",
     type: "link",
     parent_id: null,
-    nivel_requerido: 1,
     position: 0,
   });
   const [loadingState, setLoadingState] = useState(true);
   const [saving, setSaving] = useState(false);
   const [routeError, setRouteError] = useState("");
-
   const canManage = permissions?.includes?.("can_manage_endpoints") || true;
 
   // ========== CARGA ==========
@@ -95,12 +94,6 @@ export default function EndpointsManager() {
 
   const rows = useMemo(() => flattenAll(null, 0, []), [byParent]);
 
-  const parentNameMap = useMemo(() => {
-    const m = new Map();
-    for (const it of items) m.set(it.id, it.label);
-    return m;
-  }, [items]);
-
   const allFolders = useMemo(() => rows.filter(r => r.__isFolder), [rows]);
 
   // ========== SELECT/FORM ==========
@@ -122,7 +115,7 @@ export default function EndpointsManager() {
       setForm({
         label: "",
         url: "",
-        route: "",
+        route: buildAutoRoute(),
         icon: "",
         permission_id: null,
         type: "link",
@@ -156,9 +149,11 @@ export default function EndpointsManager() {
     const { name, value } = e.target;
     const next = { ...form, [name]: name === "nivel_requerido" ? Number(value) : value };
 
-    if (name === "parent_id") next.parent_id = value === "" ? null : Number(value);
+    if (name === "parent_id") {
+      next.parent_id = value === "" ? null : Number(value);
+    }
     if (name === "type" && value === "folder") { next.url = ""; next.route = ""; }
-
+    if (name === "type" && value === "link") { next.route = buildAutoRoute(); }
     setForm(next);
 
     if (name === "route" && next.type === "link") {
@@ -179,7 +174,21 @@ export default function EndpointsManager() {
     const it = items.find(x => x.id === id);
     return it ? (it.parent_id ?? null) : null;
   }
+  function buildAutoRoute() {
+    const name = uniqueNamesGenerator({
+      dictionaries: [adjectives, animals, colors],
+      length: 2
+    });
+    
+    return `/${name.replaceAll('_', '-')}`;
+  }
+  const PROTECTED_ROUTES = ["/reportes", "/endpoints", "/usuarios", "/personalizacion", "/home"];
 
+  // Función para comprobar si la ruta está protegida
+  function isProtectedRoute(route) {
+    if (!route) return false;
+    return PROTECTED_ROUTES.some((protectedPath) => route.endsWith(protectedPath));
+  }
   // ========== CRUD ==========
   async function save() {
     if (!form.label?.trim()) return apiError(null, 'Falta "label"');
@@ -314,7 +323,7 @@ export default function EndpointsManager() {
       const payload = items
         .slice()
         .sort((a, b) => (a.parent_id ?? 0) - (b.parent_id ?? 0) || (a.position ?? 0) - (b.position ?? 0))
-        .map(it => ({ id: it.id, position: it.position+1 ?? 1, parent_id: it.parent_id ?? null }));
+        .map(it => ({ id: it.id, position: it.position+1, parent_id: it.parent_id ?? null }));
 
       loading("Guardando orden…");
       await api.put("/menu/reorder", { items: payload });
@@ -400,7 +409,7 @@ export default function EndpointsManager() {
       <div className="form-panel">
         <div className="panel-header">
           <h2>{selected ? "Editar" : "Nuevo"}</h2>
-        {selected?.id && (
+        {selected?.id && !isProtectedRoute(selected?.route) && (
             <div className="actions">
               <button className="btn-danger" onClick={removeSelected}>Eliminar</button>
             </div>
@@ -425,6 +434,7 @@ export default function EndpointsManager() {
               className="input"
               name="type"
               value={form.type}
+              disabled={isProtectedRoute(selected?.route)}
               onChange={handleChange}
             >
               <option value="link">Link</option>
@@ -438,6 +448,7 @@ export default function EndpointsManager() {
               className="input"
               name="route"
               value={form.route}
+              disabled
               placeholder="/autogenerado"
             />
           </label>
@@ -449,7 +460,7 @@ export default function EndpointsManager() {
               className="input"
               name="url"
               value={form.url}
-              disabled={form.type === "folder"}
+              disabled={form.type === "folder" || isProtectedRoute(selected?.route)}
               onChange={handleChange}
               placeholder="https://… (opcional)"
             />
@@ -467,6 +478,7 @@ export default function EndpointsManager() {
               name="permission_id"
               value={form.permission_id}
               onChange={handleChange}
+              placeholder="Seleccionar..."
             >
               {permissionslist.map((p) => (
                   <option key={p.id} value={p.id}>

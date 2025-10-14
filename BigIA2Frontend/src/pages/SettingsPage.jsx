@@ -96,7 +96,7 @@ export default function Settings() {
         login_message: form.login_message || DEFAULTS.login_message,
       };
 
-      const { data } = await api.post("/settings", payload);
+      const { data } = await api.put("/settings", payload);
 
       applyThemeVars(data.topbar_color);
       setTopbarStyle?.({ color: data.topbar_color, text: data.topbar_text });

@@ -100,7 +100,7 @@
   margin: 0;
   font-size: 20px;
   font-weight: 600;
-  color: var(--topbar-fg, #fff);
+  color: var(--on-primary, #fff);
   line-height: 1;
 }
 
@@ -142,8 +142,8 @@
   background-color: transparent;
   display: inline-grid;
   place-items: center;
-  width: 32px;
-  height: 32px;
+  width: 50px;
+  height: 50px;
   border-radius: 8px;
   transition: background 0.15s ease;
 }

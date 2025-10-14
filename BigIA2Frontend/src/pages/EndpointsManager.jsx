@@ -432,18 +432,16 @@ export default function EndpointsManager() {
             </select>
           </label>
 
-          <label title="Ruta interna (para links). Se normaliza con / y sin dobles barras.">
-            Ruta
+          <label title="Ruta interna autogenerada">
+            Ruta (autogenerada)
             <input
               className="input"
               name="route"
               value={form.route}
-              disabled={form.type === "folder"}
-              onChange={handleChange}
-              placeholder="/reports/incidencias"
+              placeholder="/autogenerado"
             />
-            {routeError && <small className="error">{routeError}</small>}
           </label>
+
 
           <label title="URL externa (opcional). Si pones URL, la ruta puede quedar vacía.">
             URL

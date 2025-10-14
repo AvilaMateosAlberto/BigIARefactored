@@ -1,6 +1,17 @@
 /* ====== CAPA 0: SANEADO MÍNIMO ====== */
-*, *::before, *::after { box-sizing: border-box; }
-html, body, #root { height: 100%; margin: 0; padding: 0; }
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
 
 /* ====== CAPA 1: PRIMITIVOS LIGHT ====== */
 :root {
@@ -8,12 +19,19 @@ html, body, #root { height: 100%; margin: 0; padding: 0; }
   --brand: #c40000;
 
   /* Escala gris clara */
-  --gray-0:#ffffff; --gray-1:#f6f7fb; --gray-2:#eef2f7; --gray-3:#e5e9f1;
-  --gray-4:#d8dee9; --gray-5:#cdd6e1; --gray-6:#8a94a6; --gray-7:#556070; --gray-8:#1d2433;
+  --gray-0: #ffffff;
+  --gray-1: #f6f7fb;
+  --gray-2: #eef2f7;
+  --gray-3: #e5e9f1;
+  --gray-4: #d8dee9;
+  --gray-5: #cdd6e1;
+  --gray-6: #8a94a6;
+  --gray-7: #556070;
+  --gray-8: #1d2433;
 
   /* Estados base */
-  --blue-6:#2563eb;
-  --red-6:#dc3545;
+  --blue-6: #2563eb;
+  --red-6: #dc3545;
 
   /* ===== Semánticos base (light) ===== */
   --bg: var(--gray-1);
@@ -28,9 +46,9 @@ html, body, #root { height: 100%; margin: 0; padding: 0; }
   --text-2: var(--text-muted);
 
   /* Sombras */
-  --shadow-sm: rgba(0,0,0,.06);
-  --shadow-md: rgba(0,0,0,.12);
-  --shadow-lg: rgba(0,0,0,.18);
+  --shadow-sm: rgba(0, 0, 0, .06);
+  --shadow-md: rgba(0, 0, 0, .12);
+  --shadow-lg: rgba(0, 0, 0, .18);
 
   /* Estados semánticos */
   --danger: #e53935;
@@ -44,7 +62,7 @@ html, body, #root { height: 100%; margin: 0; padding: 0; }
   --input-text: #111111;
   --input-border: var(--gray-5);
   --input-focus: var(--blue-6);
-  --input-shadow: rgba(37,99,235,.25);
+  --input-shadow: rgba(37, 99, 235, .25);
   --input-placeholder: var(--gray-6);
 
   /* Topbar / primario */
@@ -54,8 +72,8 @@ html, body, #root { height: 100%; margin: 0; padding: 0; }
 
   /* Botones de la TOPBAR */
   --topbar-btn-bg: transparent;
-  --topbar-btn-hover-bg: rgba(255,255,255,.12);
-  --topbar-btn-border: rgba(255,255,255,.25);
+  --topbar-btn-hover-bg: rgba(255, 255, 255, .12);
+  --topbar-btn-border: rgba(255, 255, 255, .25);
   --topbar-btn-color: var(--topbar-fg);
 
   /* Sidebar */
@@ -64,19 +82,27 @@ html, body, #root { height: 100%; margin: 0; padding: 0; }
   --sb-child-accent: #d8e4ff;
 
   /* Login */
-  --login-gradient: linear-gradient(135deg,#fafbff 0%,#eef2f7 100%);
-  --login-stripe: rgba(0,0,0,.035);
-  --login-card-bg: rgba(255,255,255,.65);
-  --login-card-shadow: rgba(0,0,0,.12);
+  --login-gradient: linear-gradient(135deg, #fafbff 0%, #eef2f7 100%);
+  --login-stripe: rgba(0, 0, 0, .035);
+  --login-card-bg: rgba(255, 255, 255, .65);
+  --login-card-shadow: rgba(0, 0, 0, .12);
 
   color-scheme: light;
 }
 
 /* ====== CAPA 1 (DARK) ====== */
+
 :root[data-theme="dark"] {
-  /* Escala gris oscura */
-  --gray-0:#0f1318; --gray-1:#161a1f; --gray-2:#1b1e23; --gray-3:#20242a;
-  --gray-4:#2e333b; --gray-5:#313641; --gray-6:#a4aebe; --gray-7:#b3bccb; --gray-8:#e9edf4;
+  /* Escala gris oscura (más suave y menos contrastada) */
+  --gray-0: #1f1f1f;
+  --gray-1: #242424;
+  --gray-2: #282828;
+  --gray-3: #2f2f2f;
+  --gray-4: #363636;
+  --gray-5: #3c3c3c;
+  --gray-6: #a0a0a0;
+  --gray-7: #b8b8b8;
+  --gray-8: #e6e6e6;
 
   /* Semánticos base */
   --bg: var(--gray-1);
@@ -91,52 +117,73 @@ html, body, #root { height: 100%; margin: 0; padding: 0; }
   --text-2: var(--text-muted);
 
   /* Sombras */
-  --shadow-sm: rgba(0,0,0,.18);
-  --shadow-md: rgba(0,0,0,.28);
-  --shadow-lg: rgba(0,0,0,.36);
+  --shadow-sm: rgba(0, 0, 0, 0.18);
+  --shadow-md: rgba(0, 0, 0, 0.26);
+  --shadow-lg: rgba(0, 0, 0, 0.33);
 
   /* Inputs */
-  --input-bg: var(--gray-1);
+  --input-bg: var(--gray-2);
   --input-text: var(--gray-8);
   --input-border: var(--gray-5);
-  --input-focus: #95c0ff;
-  --input-shadow: rgba(149,192,255,.25);
+  --input-focus: #9abfff;
+  --input-shadow: rgba(149, 192, 255, 0.25);
   --input-placeholder: var(--gray-6);
 
   /* Topbar */
-  --topbar-bg: var(--brand);
+  --topbar-bg: #303030;
+  /* gris neutro más suave */
   --topbar-fg: #ffffff;
   --primary: var(--brand);
 
   /* Botones de la TOPBAR */
   --topbar-btn-bg: transparent;
-  --topbar-btn-hover-bg: rgba(255,255,255,.08);
-  --topbar-btn-border: rgba(255,255,255,.22);
+  --topbar-btn-hover-bg: rgba(255, 255, 255, 0.08);
+  --topbar-btn-border: rgba(255, 255, 255, 0.2);
   --topbar-btn-color: var(--topbar-fg);
 
   /* Enlaces */
-  --link: #95c0ff;
+  --link: #9abfff;
 
   /* Sidebar */
-  --sb-child-bg: #23262e;
-  --sb-child-hover-bg: #282c36;
+  --sb-child-bg: #2b2b2b;
+  --sb-child-hover-bg: #323232;
   --sb-child-accent: #3a4a66;
 
   /* Login */
-  --login-gradient: linear-gradient(135deg,#121417 0%,#2a2f36 100%);
-  --login-stripe: rgba(255,255,255,.03);
-  --login-card-bg: rgba(255,255,255,.06);
-  --login-card-shadow: rgba(0,0,0,.5);
+  --login-gradient: linear-gradient(135deg, #242424 0%, #2f2f2f 100%);
+  --login-stripe: rgba(255, 255, 255, 0.03);
+  --login-card-bg: rgba(255, 255, 255, 0.06);
+  --login-card-shadow: rgba(0, 0, 0, 0.45);
+
+  /* Splash / fondos */
+  --splash-bg: #242424;
+  --splash-fg: #e6e6e6;
+
+  /* Marca */
+  --brand: #c40000;
+  --on-primary: #ffffff;
 
   color-scheme: dark;
 }
 
+
 /* ====== CAPA 2: SEMÁNTICOS GLOBALES ====== */
-html, body, #root { background: var(--bg); color: var(--text); }
+html,
+body,
+#root {
+  background: var(--bg);
+  color: var(--text);
+}
 
 /* Enlaces */
-a { color: var(--link); text-decoration: none; }
-a:hover { text-decoration: underline; }
+a {
+  color: var(--link);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
 
 /* Topbar */
 .top-bar {
@@ -198,7 +245,9 @@ a:hover { text-decoration: underline; }
 }
 
 /* ===== Botones base (el resto van en controls.css) ===== */
-button { font-family: inherit; }
+button {
+  font-family: inherit;
+}
 
 /* ====== LOGIN BACKGROUND ====== */
 .login-page {
@@ -206,22 +255,16 @@ button { font-family: inherit; }
   display: flex;
   flex-direction: column;
   background:
-    radial-gradient(
-      circle at 25% 25%,
+    radial-gradient(circle at 25% 25%,
       color-mix(in srgb, var(--brand) 12%, transparent),
-      transparent 70%
-    ),
-    linear-gradient(
-      135deg,
+      transparent 70%),
+    linear-gradient(135deg,
       color-mix(in srgb, var(--bg) 96%, var(--surface) 4%) 0%,
-      color-mix(in srgb, var(--surface) 90%, var(--bg) 10%) 100%
-    ),
-    repeating-linear-gradient(
-      45deg,
+      color-mix(in srgb, var(--surface) 90%, var(--bg) 10%) 100%),
+    repeating-linear-gradient(45deg,
       transparent 0,
       transparent 24px,
       var(--login-stripe) 24px,
-      var(--login-stripe) 48px
-    );
+      var(--login-stripe) 48px);
   background-blend-mode: normal, overlay, normal;
 }

@@ -7,27 +7,23 @@ const { verifyToken } = require('../middleware/auth');
 const { BadRequestError } = require('../errors/customErrors');
 
 const loginLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // Ventana de 15 minutos
-  max: 5, // Límite de 5 peticiones por IP en esa ventana
+  windowMs: 15 * 60 * 1000,
+  max: 5,
   message: { error: 'Demasiados intentos de inicio de sesión. Por favor, inténtelo de nuevo en 15 minutos.' },
   standardHeaders: true,
   legacyHeaders: false,
+  skipSuccessfulRequests: true, // Mantenemos esto para no contar los logins correctos
 });
 
 router.post('/login', loginLimiter, async (req, res, next) => {
   try {
     const { username, password } = req.body;
-    
-    // authService.authenticate lanza un error si las credenciales son incorrectas
     const user = await authService.authenticate(username, password);
-
-    // Si llegamos aquí, el login fue exitoso.
-    // ¡Esta es la solución! Reseteamos el contador para esta IP.
-    if (req.rateLimit) {
-      req.rateLimit.resetKey();
-    }
-
     const { accessToken, refreshToken } = await authService.createSession(user, req);
+
+    // --- SOLUCIÓN DEFINITIVA ---
+    // Reseteamos el contador para la IP del cliente actual.
+    loginLimiter.resetKey(req.ip);
 
     res.cookie('rt', refreshToken, authService.buildCookieOptions());
 
@@ -43,12 +39,12 @@ router.post('/login', loginLimiter, async (req, res, next) => {
       permissions,
     });
   } catch (err) {
-    // Si el login falla, el error se envía y el contador del rate-limiter NO se resetea.
     next(err);
   }
 });
 
-// El resto del archivo no necesita cambios...
+// ... el resto del archivo no cambia
+
 router.post('/refresh', async (req, res, next) => {
   try {
     const oldRefreshToken = req.cookies?.rt;

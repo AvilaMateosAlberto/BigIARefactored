@@ -12,7 +12,6 @@ const authRoutes = require('./routes/auth');
 const usersRoutes = require('./routes/users');
 const menuRoutes = require('./routes/menu');
 const settingsRoutes = require('./routes/settings');
-const revealjsApiRoutes = require('./routes/revealjsapi');
 const { verifyToken } = require('./middleware/auth');
 const errorHandler = require('./middleware/errorHandler');
 const { NotFoundError } = require('./errors/customErrors'); // <-- CAMBIO 1: Importamos el error específico para 404
@@ -82,7 +81,6 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', usersRoutes);
 app.use('/api/menu', menuRoutes);
 app.use('/api/settings', settingsRoutes);
-app.use('/revealjsapi', revealjsApiRoutes); // fuera de /api => no le afecta el guard
 
 /* =========================
    404 y handler de errores

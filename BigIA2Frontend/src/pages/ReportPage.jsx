@@ -6,10 +6,6 @@ import "./pagesStyles/ReportPage.css";
 
 const MAX_LOGO_SIZE = 1 * 1024 * 1024; // 1MB
 
-// cache en módulo para no repetir pruebas
-let hasCheckedPdfStatus = false;
-let pdfStatusAvailable = false;
-
 export default function ReportPage() {
   const { menu } = useApp();
 
@@ -193,8 +189,6 @@ export default function ReportPage() {
       refreshIframe();
 
       const ok = await callGeneratePdfWithProgress();
-      // Tras guardar, mantenemos la imagen seleccionada si existe.
-      // Si quieres “congelar” la del servidor, puedes forzar clearSelectedLogo();
 
       if (ok) {
         setMsgType("success");

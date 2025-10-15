@@ -34,6 +34,8 @@ export const confirm = (title, text, confirmText = "Sí, continuar") =>
     cancelButtonText: "Cancelar",
   });
 
+
+
 /** ---------- TOASTS (esquineros auto-cierre) ---------- */
 export const toast = (title, icon = "info", ms = 2000, position = "top-end") =>
   Swal.fire({
@@ -52,12 +54,12 @@ export const toastErr  = (title = "Error")  => toast(title, "error");
 export const toastInfo = (title = "Info")   => toast(title, "info");
 
 /** Presets informativos (siempre toast) */
-export const created   = (what = "Elemento creado")      => toastOk(what);
-export const updated   = (what = "Cambios guardados")    => toastOk(what);
+export const created   = (what = "Elemento creado")       => toastOk(what);
+export const updated   = (what = "Cambios guardados")     => toastOk(what);
 export const removed   = (what = "Elemento eliminado")   => toastOk(what);
-export const reloaded  = (what = "Recargado")            => toastOk(what);
+export const reloaded  = (what = "Recargado")             => toastOk(what);
 
-export const orderSaved     = () => toastOk("Orden guardado");
+export const orderSaved       = () => toastOk("Orden guardado");
 export const orderSaveError = () => toastErr("No se pudo guardar el orden");
 
 /** ---------- LOADING MODAL (bloqueante) ---------- */
@@ -78,6 +80,7 @@ export const close = () => {
 /** ---------- CASOS TÍPICOS (PRESSETS) ---------- */
 // Login
 export const validatingCredentials = () => loading("Validando credenciales…");
+
 export const invalidCredentials = () =>
   Swal.fire({
     ...base(),
@@ -90,6 +93,12 @@ export const invalidCredentials = () =>
     timerProgressBar: true,
     showConfirmButton: false,
   });
+
+// --- FUNCIÓN AÑADIDA ---
+// Usa un modal centrado (err) en lugar de un toast para que el usuario no se lo pierda.
+export const tooManyAttempts = (message = 'Demasiados intentos de inicio de sesión.') =>
+  err('Límite de intentos alcanzado', message);
+
 
 // Confirmaciones destructivas
 export const confirmDeleteUser = (username = "") =>

@@ -27,51 +27,51 @@ api.interceptors.request.use((config) => {
 
 // (Opcional) Refresh automático en 401.
 // Descomenta este bloque cuando quieras activarlo:
-let isRefreshing = false;
-let queue = [];
+// let isRefreshing = false;
+// let queue = [];
 
-api.interceptors.response.use(
-  (res) => res,
-  async (error) => {
-    const { response, config } = error;
-    if (!response) return Promise.reject(error);
-    if (response.status !== 401 || config._retry) return Promise.reject(error);
+// api.interceptors.response.use(
+//   (res) => res,
+//   async (error) => {
+//     const { response, config } = error;
+//     if (!response) return Promise.reject(error);
+//     if (response.status !== 401 || config._retry) return Promise.reject(error);
 
-    config._retry = true;
+//     config._retry = true;
 
-    if (!isRefreshing) {
-      isRefreshing = true;
+//     if (!isRefreshing) {
+//       isRefreshing = true;
 
-      try {
-        const { data } = await api.post("/auth/refresh"); // cookie httpOnly
-        setAccessToken(data.accessToken);
+//       try {
+//         const { data } = await api.post("/auth/refresh"); // cookie httpOnly
+//         setAccessToken(data.accessToken);
 
-        // resolvemos todas las promesas pendientes
-        queue.forEach(({ resolve }) => resolve());
-        queue = [];
+//         // resolvemos todas las promesas pendientes
+//         queue.forEach(({ resolve }) => resolve());
+//         queue = [];
 
-        return api(config);
-      } catch (e) {
-        // rechazamos todas las promesas pendientes
-        queue.forEach(({ reject }) => reject(e));
-        queue = [];
+//         return api(config);
+//       } catch (e) {
+//         // rechazamos todas las promesas pendientes
+//         queue.forEach(({ reject }) => reject(e));
+//         queue = [];
 
-        window.dispatchEvent(new Event("sessionExpired"));
-        return Promise.reject(e);
-      } finally {
-        isRefreshing = false;
-      }
-    }
+//         window.dispatchEvent(new Event("sessionExpired"));
+//         return Promise.reject(e);
+//       } finally {
+//         isRefreshing = false;
+//       }
+//     }
 
-    // Si ya hay un refresh en curso, devolvemos promesa que se resolverá o rechazará después
-    return new Promise((resolve, reject) => {
-      queue.push({
-        resolve: () => resolve(api(config)),
-        reject: (err) => reject(err),
-      });
-    });
-  }
-);
+//     // Si ya hay un refresh en curso, devolvemos promesa que se resolverá o rechazará después
+//     return new Promise((resolve, reject) => {
+//       queue.push({
+//         resolve: () => resolve(api(config)),
+//         reject: (err) => reject(err),
+//       });
+//     });
+//   }
+// );
 
 
 

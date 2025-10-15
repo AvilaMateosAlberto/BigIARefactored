@@ -18,7 +18,7 @@ const REFRESH_TTL_SEC = parseInt(process.env.REFRESH_TOKEN_TTL_SEC || '2592000',
  * @param {string} password - La contraseña en texto plano.
  * @returns {Promise<object>} El objeto de usuario de la base de datos.
  * @throws {BadRequestError} Si faltan credenciales.
- * @throws {UnauthorizedError} Si las credenciales son incorrectas.
+ * @throws {UnauthorizedError} Si las credenciales son incorrectas o hay un error.
  */
 async function authenticate(username, password) {
   if (!username || !password) {
@@ -28,7 +28,23 @@ async function authenticate(username, password) {
   const result = await pool.query(`SELECT * FROM users WHERE LOWER(username) = LOWER($1)`, [username.trim()]);
   const user = result.rows[0];
 
-  if (!user || !(await bcrypt.compare(password, user.password))) {
+  // Caso 1: El usuario no existe.
+  if (!user) {
+    throw new UnauthorizedError('Credenciales incorrectas');
+  }
+
+  let isValid = false;
+  try {
+    // Comparamos la contraseña de forma segura.
+    isValid = await bcrypt.compare(password, user.password);
+  } catch (bcryptError) {
+    // Si bcrypt falla (ej. por un hash malformado), lo capturamos.
+    console.error('Error en la comparación con bcrypt:', bcryptError);
+    throw new UnauthorizedError('Error al verificar las credenciales');
+  }
+
+  // Caso 2: La contraseña no coincide.
+  if (!isValid) {
     throw new UnauthorizedError('Credenciales incorrectas');
   }
 
@@ -76,44 +92,44 @@ async function rotateSession(oldRefreshToken, req) {
     const sessionId = payload.jti;
     const familyId = payload.fid;
     const userId = parseInt(payload.sub, 10);
-  
+
     const { rows } = await pool.query('SELECT * FROM sessions WHERE id = $1', [sessionId]);
     const current = rows[0];
-  
+
     if (!current || current.revoked) {
       await pool.query('UPDATE sessions SET revoked = true WHERE family_id = $1', [familyId]);
       throw new UnauthorizedError('Posible reutilización de token de refresco detectada.');
     }
-  
+
     const matches = await bcrypt.compare(oldRefreshToken, current.refresh_token_hash);
     if (!matches) {
       await pool.query('UPDATE sessions SET revoked = true WHERE family_id = $1', [familyId]);
       throw new UnauthorizedError('Posible reutilización de token de refresco detectada (hash incorrecto).');
     }
-  
+
     if (new Date(current.expires_at).getTime() <= Date.now()) {
       await pool.query('UPDATE sessions SET revoked = true WHERE id = $1', [current.id]);
       throw new UnauthorizedError('El token de refresco ha expirado.');
     }
-  
+
     // Invalida el token actual y crea uno nuevo en la misma familia.
     await pool.query('UPDATE sessions SET revoked = true WHERE id = $1', [current.id]);
-  
+
     const newSessionId = crypto.randomUUID();
     const newRefreshToken = signRefreshToken({ sub: userId, jti: newSessionId, familyId });
     const newHash = await bcrypt.hash(newRefreshToken, 12);
     const newExpiresAt = new Date(Date.now() + REFRESH_TTL_SEC * 1000);
-  
+
     await pool.query(
       `INSERT INTO sessions (id, user_id, family_id, refresh_token_hash, expires_at, ip, user_agent, revoked)
        VALUES ($1,$2,$3,$4,$5,$6,$7,false)`,
       [newSessionId, userId, familyId, newHash, newExpiresAt, req.ip || null, req.get('user-agent') || null]
     );
-  
+
     const userRes = await pool.query(`SELECT id, username, icon, role_id FROM users WHERE id = $1`, [userId]);
     const user = userRes.rows[0];
     if (!user) throw new NotFoundError('Usuario asociado al token no encontrado.');
-  
+
     const accessToken = signAccessToken(user);
     return { accessToken, user, newRefreshToken };
 }
@@ -178,4 +194,3 @@ module.exports = {
     revokeSession,
     buildCookieOptions,
 };
-

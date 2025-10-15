@@ -11,6 +11,7 @@ import "./pagesStyles/LoginForm.css";
 import {
   validatingCredentials,
   invalidCredentials,
+  tooManyAttempts, // <-- Importamos la nueva alerta para el bloqueo
   close as closeAlert,
 } from "../ui/alerts";
 
@@ -26,7 +27,9 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
-  const [info, setInfo] = useState("");
+  
+  // --- AÑADIDO: Nuevo estado para bloquear el formulario ---
+  const [isLocked, setIsLocked] = useState(false);
 
   // Cierra el Swal si el usuario navega fuera del login
   useEffect(() => {
@@ -39,8 +42,9 @@ export default function LoginPage() {
 
   const submit = async (e) => {
     e.preventDefault();
+    // --- AÑADIDO: No hacer nada si está bloqueado ---
+    if (isLocked) return;
     setError("");
-    setInfo("");
 
     try {
       // Mostrar modal de validación
@@ -53,16 +57,26 @@ export default function LoginPage() {
       closeAlert();
       login(user, menu, permissions, accessToken);
       navigate("/home", { replace: true });
+
     } catch (err) {
       console.error("Error login:", err?.response || err);
 
-      // ⏱️ Añadimos un pequeño retardo visual antes de cerrar el loader
+      // --- LÓGICA DE ERRORES MODIFICADA ---
       setTimeout(() => {
         try { closeAlert(); } catch {}
 
-        setError("Usuario o contraseña incorrectos");
-        invalidCredentials();
-      }, 800); // 0.8 segundos → suficiente para que no “flashee”
+        // Caso 1: Error de "Demasiados Intentos" (429)
+        if (err?.response?.status === 429) {
+          const msg = err?.response?.data?.error || 'Demasiados intentos. Inténtelo más tarde.';
+          setError(msg);
+          setIsLocked(true); // Bloqueamos el formulario
+          tooManyAttempts(msg); // Mostramos la alerta específica de bloqueo
+        } else {
+          // Caso 2: Cualquier otro error (ej. credenciales incorrectas)
+          setError("Usuario o contraseña incorrectos");
+          invalidCredentials();
+        }
+      }, 800);
     }
   };
 
@@ -85,6 +99,8 @@ export default function LoginPage() {
               autoFocus
               required
               onChange={(e) => setUsername(e.target.value)}
+              // --- AÑADIDO: Deshabilitar si está bloqueado ---
+              disabled={isLocked}
             />
           </div>
 
@@ -96,6 +112,8 @@ export default function LoginPage() {
               placeholder="Contraseña"
               required
               onChange={(e) => setPassword(e.target.value)}
+              // --- AÑADIDO: Deshabilitar si está bloqueado ---
+              disabled={isLocked}
             />
             <button
               type="button"
@@ -103,15 +121,18 @@ export default function LoginPage() {
               onClick={togglePassword}
               aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
               title={showPassword ? "Ocultar" : "Mostrar"}
+              // --- AÑADIDO: Deshabilitar si está bloqueado ---
+              disabled={isLocked}
             >
               <IconResolver name={showPassword ? "visibility-off" : "visibility"} size={18} />
             </button>
           </div>
 
-          <button type="submit" className="submit-btn">Entrar</button>
+          <button type="submit" className="submit-btn" disabled={isLocked}>
+            Entrar
+          </button>
 
           {error && <p className="error">{error}</p>}
-          {info && <p className="info">{info}</p>}
         </form>
       </main>
     </div>

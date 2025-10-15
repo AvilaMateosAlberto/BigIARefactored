@@ -460,7 +460,7 @@ export default function EndpointsManager() {
               className="input"
               name="url"
               value={form.url}
-              disabled={form.type === "folder" || isProtectedRoute(selected?.route)}
+              disabled={form.type === "folder"}
               onChange={handleChange}
               placeholder="https://… (opcional)"
             />

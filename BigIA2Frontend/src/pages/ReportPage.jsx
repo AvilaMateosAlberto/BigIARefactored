@@ -1,161 +1,434 @@
 // src/pages/ReportPage.jsx
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import revealAxios from "../api/revealAxios";
+import { useApp } from "../context/AppContext";
 import "./pagesStyles/ReportPage.css";
-import { getItem, setItem } from "../utils/storage";
-import { useConfig } from "../context/ConfigContext";
 
-const LS_KEY = "reports_page_state_v1_min";
+const MAX_LOGO_SIZE = 1 * 1024 * 1024; // 1MB
 
-const DEFAULTS = {
-  title: "Reportes",
-  baseUrl: "",
-  path: "/index.html",
-  collapsed: true, // por defecto plegado
-  clientName: "Cliente Prueba",
-  author: "SOC Team",
-  notes: "Nada que destacar de momento.",
-  clientLogoDataUrl: "", // preview base64
-};
+// cache en módulo para no repetir pruebas
+let hasCheckedPdfStatus = false;
+let pdfStatusAvailable = false;
 
 export default function ReportPage() {
-  const { config } = useConfig();
-  const [state, setState] = useState(() => getItem(LS_KEY) || { ...DEFAULTS });
-  const [mounted, setMounted] = useState(false);
+  const { menu } = useApp();
 
-  useEffect(() => { document.title = state.title || "Reportes"; }, [state.title]);
+  const reportItem = useMemo(() => {
+    if (!Array.isArray(menu)) return null;
+    const flatten = (arr, out = []) => {
+      for (const n of arr) {
+        if (n?.type === "folder" && Array.isArray(n.children)) flatten(n.children, out);
+        else out.push(n);
+      }
+      return out;
+    };
+    const all = flatten(menu);
+    return all.find((it) => it?.route === "/reportes") || null;
+  }, [menu]);
 
-  useEffect(() => { if (mounted) setItem(LS_KEY, state); }, [state, mounted]);
-  useEffect(() => { setMounted(true); }, []);
+  const [loadingInit, setLoadingInit] = useState(true);
+  const [formOpen, setFormOpen] = useState(false); // empieza cerrado
 
-  const iframeUrl = useMemo(() => {
-    const base = (state.baseUrl || "").replace(/\/+$/, "");
-    const path = state.path?.startsWith("/") ? state.path : `/${state.path || ""}`;
-    if (!base) return "";
-    return `${base}${path}`;
-  }, [state.baseUrl, state.path]);
+  const [nombreCliente, setNombreCliente] = useState("");
+  const [autor, setAutor] = useState("");
+  const [observaciones, setObservaciones] = useState("");
 
-  const toggleCollapsed = () => setState(s => ({ ...s, collapsed: !s.collapsed }));
-  const onChange = (k) => (e) => setState(s => ({ ...s, [k]: e.target.value }));
+  // Imagen del servidor (si existe) y selección local actual
+  const [serverLogoUrl, setServerLogoUrl] = useState("");
+  const [selectedLogoUrl, setSelectedLogoUrl] = useState(""); // blob de la selección
+  const displayLogoUrl = selectedLogoUrl || serverLogoUrl;
+
+  const [logoFile, setLogoFile] = useState(null);
+  const fileRef = useRef(null);
+
+  const [savingVars, setSavingVars] = useState(false);
+  const [updatingReport, setUpdatingReport] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const [refreshingIframe, setRefreshingIframe] = useState(false);
+
+  const [copyingPdf, setCopyingPdf] = useState(false);
+  const [pdfProgress, setPdfProgress] = useState(null);
+
+  const [msg, setMsg] = useState("");
+  const [msgType, setMsgType] = useState("info");
+
+  const baseIframeUrl = useMemo(() => {
+    return reportItem?.url || reportItem?.iframe_url || "";
+  }, [reportItem]);
+
+  const [iframeNonce, setIframeNonce] = useState(0);
+  const computedIframeSrc = useMemo(() => {
+    if (!baseIframeUrl) return "";
+    const sep = baseIframeUrl.includes("?") ? "&" : "?";
+    return iframeNonce ? `${baseIframeUrl}${sep}_=${iframeNonce}` : baseIframeUrl;
+  }, [baseIframeUrl, iframeNonce]);
+
+  const refreshIframe = () => {
+    if (!baseIframeUrl) return;
+    setRefreshingIframe(true);
+    setIframeNonce(Date.now());
+    setTimeout(() => setRefreshingIframe(false), 600);
+  };
+
+  // Limpieza de blobs al desmontar
+  useEffect(() => {
+    return () => {
+      if (serverLogoUrl?.startsWith("blob:")) URL.revokeObjectURL(serverLogoUrl);
+      if (selectedLogoUrl?.startsWith("blob:")) URL.revokeObjectURL(selectedLogoUrl);
+    };
+  }, [serverLogoUrl, selectedLogoUrl]);
+
+  // Carga inicial desde upstream
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadClientInfo() {
+      setLoadingInit(true);
+      setMsg("");
+      try {
+        const { data } = await revealAxios.get("/get_client_info");
+        const payload = data?.data ?? data;
+
+        const nombre = payload?.Cliente ?? payload?.cliente ?? payload?.nombre_cliente ?? "";
+        const autor_ = payload?.Autor ?? payload?.autor ?? "";
+        const obs = payload?.Observaciones ?? payload?.observaciones ?? "";
+
+        if (!cancelled) {
+          setNombreCliente(String(nombre || ""));
+          setAutor(String(autor_ || ""));
+          setObservaciones(String(obs || ""));
+        }
+
+        // Logo (si tu upstream sirve esta ruta)
+        try {
+          const res = await revealAxios.get("/assets/logo_cliente.png", { responseType: "blob" });
+          if (!cancelled) {
+            const blobUrl = URL.createObjectURL(res.data);
+            setServerLogoUrl((prev) => {
+              if (prev?.startsWith("blob:")) URL.revokeObjectURL(prev);
+              return blobUrl;
+            });
+          }
+        } catch {
+          /* Es normal si el upstream no tiene logo aún */
+        }
+      } catch (err) {
+        console.error("⚠️ get_client_info failed:", err);
+        if (!cancelled) {
+          setMsgType("error");
+          setMsg("No se pudo cargar la información del cliente.");
+        }
+      } finally {
+        if (!cancelled) setLoadingInit(false);
+      }
+    }
+
+    loadClientInfo();
+    return () => { cancelled = true; };
+  }, []);
 
   const onLogoChange = (e) => {
     const file = e.target.files?.[0];
-    if (!file) return;
-    if (!file.type.includes("png")) { alert("Por favor sube un .png"); return; }
-    const reader = new FileReader();
-    reader.onload = () => setState(s => ({ ...s, clientLogoDataUrl: reader.result }));
-    reader.readAsDataURL(file);
+    if (!file) { setLogoFile(null); clearSelectedLogo(); return; }
+    if (file.type !== "image/png") {
+      setMsgType("error"); setMsg("El logo debe ser un archivo .png");
+      fileRef.current && (fileRef.current.value = "");
+      clearSelectedLogo();
+      return;
+    }
+    if (file.size > MAX_LOGO_SIZE) {
+      setMsgType("error"); setMsg("El logo es demasiado grande. Máximo 1MB.");
+      fileRef.current && (fileRef.current.value = "");
+      clearSelectedLogo();
+      return;
+    }
+    const url = URL.createObjectURL(file);
+    setSelectedLogoUrl((prev) => { if (prev?.startsWith("blob:")) URL.revokeObjectURL(prev); return url; });
+    setLogoFile(file);
   };
 
-  const saveVariables = async () => {
-    console.log("Guardar variables:", {
-      clientName: state.clientName,
-      author: state.author,
-      notes: state.notes,
-      clientLogoDataUrl: !!state.clientLogoDataUrl,
-    });
+  const clearSelectedLogo = () => {
+    // Vuelve a mostrar el del servidor automáticamente
+    if (selectedLogoUrl?.startsWith("blob:")) URL.revokeObjectURL(selectedLogoUrl);
+    setSelectedLogoUrl("");
+    setLogoFile(null);
+    if (fileRef.current) fileRef.current.value = "";
   };
 
-  const refreshReport = () => {
-    const iframe = document.getElementById("reports-iframe");
-    if (!iframe || !iframe.src) return;
+  async function callGeneratePdfWithProgress() {
+    setCopyingPdf(true);
     try {
-      const u = new URL(iframe.src, window.location.origin);
-      u.hash = `ts=${Date.now()}`;
-      iframe.src = u.toString();
-    } catch {
-      iframe.src = `${iframe.src.split("#")[0]}#ts=${Date.now()}`;
+      await revealAxios.post("/generate_pdf");
+      setMsgType("success");
+      setMsg("PDF regenerado correctamente.");
+      return true;
+    } catch (err) {
+      console.error("❌ generate_pdf error:", err);
+      setMsgType("error");
+      setMsg(err?.response?.data?.error || err?.response?.data?.message || "No se pudo generar el PDF.");
+      return false;
+    } finally {
+      if (pollTimer) clearInterval(pollTimer);
+      setPdfProgress(null);
+      setCopyingPdf(false);
+    }
+  }
+
+  const handleSaveVariables = async (e) => {
+    e.preventDefault();
+    setSavingVars(true);
+    setMsg("");
+
+    try {
+      // Siempre FormData (alineado con upstream)
+      const form = new FormData();
+      form.append("nombre_cliente", nombreCliente || "");
+      form.append("autor", autor || "");
+      form.append("observaciones", observaciones || "");
+      if (logoFile) {
+        form.append("logo_cliente", logoFile, "logo_cliente.png");
+      }
+
+      await revealAxios.post("/update_client_info", form);
+
+      // Refrescar IFRAME ANTES del snapshot
+      refreshIframe();
+
+      const ok = await callGeneratePdfWithProgress();
+      // Tras guardar, mantenemos la imagen seleccionada si existe.
+      // Si quieres “congelar” la del servidor, puedes forzar clearSelectedLogo();
+
+      if (ok) {
+        setMsgType("success");
+        setMsg("Variables guardadas y PDF regenerado correctamente.");
+      }
+    } catch (err) {
+      console.error("❌ update_client_info error:", err);
+      setMsgType("error");
+      const serverMsg =
+        err?.response?.data?.error ||
+        err?.response?.data?.message ||
+        "No se pudieron guardar las variables.";
+      setMsg(serverMsg);
+    } finally {
+      setSavingVars(false);
     }
   };
 
-  const downloadPDF = () => {
-    if (iframeUrl) window.open(iframeUrl, "_blank", "noopener,noreferrer");
+  const handleUpdateReport = async () => {
+    setUpdatingReport(true);
+    setMsg("");
+    try {
+      refreshIframe();
+      await revealAxios.post("/generate_report");
+      const ok = await callGeneratePdfWithProgress();
+      if (ok) {
+        setMsgType("success");
+        setMsg("Reporte actualizado y PDF regenerado correctamente.");
+      }
+    } catch (err) {
+      console.error("❌ generate_report error:", err);
+      setMsgType("error");
+      setMsg("No se pudo actualizar el reporte.");
+    } finally {
+      setUpdatingReport(false);
+    }
   };
 
-  return (
-    <div className={`reports-page minimal ${state.collapsed ? "is-collapsed" : ""}`}>
-      {/* Botón flotante arriba-derecha */}
-      <button
-        className="reports-toggle top-right"
-        type="button"
-        aria-label={state.collapsed ? "Mostrar panel" : "Ocultar panel"}
-        onClick={toggleCollapsed}
-        title={state.collapsed ? "Mostrar panel" : "Ocultar panel"}
-      >
-        {state.collapsed ? (
-          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
-            <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zm14.71-9.04a1.003 1.003 0 0 0 0-1.42l-2.5-2.5a1.003 1.003 0 0 0-1.42 0l-1.83 1.83 3.75 3.75 1.99-1.66z"/>
-          </svg>
-        ) : (
-          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
-            <path d="M9 6l6 6-6 6V6z"></path>
-          </svg>
-        )}
-      </button>
+  const handleDownload = async () => {
+    setDownloading(true);
+    setMsg("");
+    try {
+      const res = await revealAxios.get("/download_report", { responseType: "blob" });
+      const disp = res.headers?.["content-disposition"] || res.headers?.get?.("content-disposition") || "";
+      let filename = "reporte.pdf";
+      const m = /filename\*?=(?:UTF-8''|")?([^\";]+)/i.exec(disp);
+      if (m && m[1]) filename = decodeURIComponent(m[1].replace(/\"/g, ""));
+      const url = URL.createObjectURL(res.data);
+      const a = document.createElement("a");
+      a.href = url; a.download = filename;
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(url);
+      setMsgType("success"); setMsg("Descarga iniciada.");
+    } catch (err) {
+      console.error("❌ download_report error:", err);
+      setMsgType("error"); setMsg("No se pudo descargar el PDF.");
+    } finally {
+      setDownloading(false);
+    }
+  };
 
-      {/* IFRAME IZQ (70/30) */}
-      <section className="reports-left">
-        {!state.baseUrl ? (
-          <div className="reports-empty">
-            <h3>Configura un origen de reportes</h3>
-            <p>
-              Indica la <b>URL base</b> y la <b>ruta</b> de tu reporte (por ejemplo,
-              tu contenedor <code>revealjs-report</code>).
-            </p>
-          </div>
+  const iframeWidthClass = !baseIframeUrl ? "full" : formOpen ? "half" : "full";
+
+  return (
+    <div className="report-container">
+      {/* FAB único: abre/cierra y cambia icono */}
+      <div className="form-toggle-fab">
+        <button
+          type="button"
+          className="fab"
+          onClick={() => setFormOpen((v) => !v)}
+          title={formOpen ? "Ocultar formulario" : "Mostrar formulario"}
+          aria-label={formOpen ? "Ocultar formulario" : "Mostrar formulario"}
+        >
+          {formOpen ? "❯" : "✎"}
+        </button>
+      </div>
+
+      {/* Iframe */}
+      <section className={`iframe-section ${iframeWidthClass}`}>
+        {baseIframeUrl ? (
+          <>
+            <iframe key={computedIframeSrc} src={computedIframeSrc} className="report-iframe" title="Reporte" />
+            {(copyingPdf || refreshingIframe) && (
+              <div className="loading-overlay">
+                <div className="spinner" />
+                <div className="loading-text">
+                  {refreshingIframe ? "Actualizando vista…" : "Copiando reporte (PDF)…"}
+                </div>
+                {typeof pdfProgress === "number" && (
+                  <div className="progress-wrap">
+                    <progress value={pdfProgress} max="100" />
+                    <span>{pdfProgress}%</span>
+                  </div>
+                )}
+              </div>
+            )}
+          </>
         ) : (
-          <iframe
-            id="reports-iframe"
-            className="reports-iframe"
-            src={iframeUrl}
-            title="Reporte embebido"
-            loading="eager"
-            referrerPolicy="no-referrer"
-          />
+          <div className="no-iframe">No hay URL configurada para /reportes.</div>
         )}
       </section>
 
-      {/* PANEL DERECHO (plegable) */}
-      <aside className="reports-right" aria-hidden={state.collapsed}>
-        <header className="reports-header">
-          <h2>Variables del reporte</h2>
-          <p className="sub">Estas variables se guardan en base de datos y se inyectan al generar el PDF.</p>
-        </header>
-
-        <div className="reports-form">
-          <div className="row two">
-            <div className="field">
-              <label>Nombre del cliente</label>
-              <input className="input" type="text" value={state.clientName} onChange={onChange("clientName")} />
+      {/* Panel formulario */}
+      <aside className={`form-section ${formOpen ? "open" : "closed"}`}>
+        <div className="form-inner">
+          <header className="form-header">
+            <div className="form-header-row">
+              <h2>Variables del reporte</h2>
             </div>
-            <div className="field">
-              <label>Autor</label>
-              <input className="input" type="text" value={state.author} onChange={onChange("author")} />
+            <p className="muted">
+              Estas variables se guardan en base de datos y se inyectan al generar el PDF.
+            </p>
+          </header>
+
+          {msg && <div className={`inline-msg ${msgType}`}>{msg}</div>}
+
+          <form className="client-form" onSubmit={handleSaveVariables}>
+            <div className="form-grid">
+              <div className="form-group">
+                <label>
+                  Nombre del cliente
+                  <input
+                    type="text"
+                    value={nombreCliente}
+                    onChange={(e) => setNombreCliente(e.target.value)}
+                    disabled={loadingInit || savingVars || updatingReport}
+                    autoComplete="off"
+                    name="nombre_cliente"
+                  />
+                </label>
+              </div>
+
+              <div className="form-group">
+                <label>
+                  Autor
+                  <input
+                    type="text"
+                    value={autor}
+                    onChange={(e) => setAutor(e.target.value)}
+                    disabled={loadingInit || savingVars || updatingReport}
+                    autoComplete="off"
+                    name="autor"
+                  />
+                </label>
+              </div>
+
+              <div className="form-group wide">
+                <label>
+                  Observaciones
+                  <textarea
+                    value={observaciones}
+                    onChange={(e) => setObservaciones(e.target.value)}
+                    rows={4}
+                    disabled={loadingInit || savingVars || updatingReport}
+                    name="observaciones"
+                  />
+                </label>
+              </div>
+
+              {/* === LOGO: input arriba, preview debajo (ambos a ancho completo) === */}
+              <div className="form-group wide">
+                <label htmlFor="logo-input">Logo del cliente (.png)</label>
+                <input
+                  id="logo-input"
+                  name="logo_cliente"
+                  type="file"
+                  accept="image/png"
+                  onChange={onLogoChange}
+                  ref={fileRef}
+                  disabled={loadingInit || savingVars || updatingReport}
+                />
+              </div>
+
+              <div className="form-group wide">
+                <div className="logo-preview-wrap">
+                  {displayLogoUrl ? (
+                    <>
+                      <img src={displayLogoUrl} alt="Logo del cliente" className="logo-preview" />
+                      {selectedLogoUrl && (
+                        <button
+                          type="button"
+                          className="clear-logo-btn"
+                          title="Quitar selección"
+                          aria-label="Quitar selección"
+                          onClick={clearSelectedLogo}
+                          disabled={savingVars || updatingReport}
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </>
+                  ) : (
+                    <div className="logo-placeholder">Sin logo</div>
+                  )}
+                </div>
+              </div>
             </div>
-          </div>
 
-          <div className="row">
-            <label>Observaciones</label>
-            <textarea className="input" rows={4} value={state.notes} onChange={onChange("notes")} />
-          </div>
+            <div className="form-actions">
+              {/* Guardar y Actualizar ahora son secundarios */}
+              <button
+                type="submit"
+                className="btn-secondary"
+                disabled={savingVars || updatingReport}
+                title="Guardar variables"
+              >
+                {savingVars ? "Guardando…" : "Guardar variables"}
+              </button>
 
-          <div className="row">
-            <label>Logo del cliente (.png)</label>
-            <input className="input" type="file" accept="image/png" onChange={onLogoChange} />
-          </div>
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={handleUpdateReport}
+                disabled={updatingReport}
+                title="Actualiza gráficos/datos"
+              >
+                {updatingReport ? "Actualizando…" : "Actualizar reporte"}
+              </button>
 
-          <div className="logo-preview">
-            {state.clientLogoDataUrl ? (
-              <img src={state.clientLogoDataUrl} alt="Logo cliente" />
-            ) : (
-              <div className="logo-placeholder">Previsualización del logo</div>
-            )}
-          </div>
-
-          <div className="actions">
-            <button className="btn ghost" onClick={saveVariables}>Guardar variables</button>
-            <button className="btn ghost" onClick={refreshReport}>Actualizar reporte</button>
-            <button className="btn brand" onClick={downloadPDF} disabled={!iframeUrl}>Descargar PDF</button>
-          </div>
+              {/* Solo Descargar va con color principal */}
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={handleDownload}
+                disabled={downloading}
+                title="Descarga el último PDF guardado"
+              >
+                {downloading ? "Descargando…" : "Descargar PDF"}
+              </button>
+            </div>
+          </form>
         </div>
       </aside>
     </div>

@@ -168,8 +168,6 @@ export default function ReportPage() {
       setMsg(err?.response?.data?.error || err?.response?.data?.message || "No se pudo generar el PDF.");
       return false;
     } finally {
-      if (pollTimer) clearInterval(pollTimer);
-      setPdfProgress(null);
       setCopyingPdf(false);
     }
   }

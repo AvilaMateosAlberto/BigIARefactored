@@ -100,3 +100,30 @@ button:active { transform: translateY(1px); }
 
 .form-actions { display: flex; gap: 8px; }
 .hint { margin-top: 10px; color: var(--text-2); font-size: 13px; }
+
+/* ==================================
+   === ESTILOS PARA CARPETAS (versión dinámica y final) ===
+   ================================== */
+
+.table tbody tr.folder-row {
+  /* Usamos la variable --brand-rgb con un 12% de opacidad.
+    Esto crea un tinte claro en modo light y un matiz oscuro en modo dark,
+    ¡automáticamente!
+  */
+  background-color: rgba(var(--brand-rgb, 196, 0, 0), 0.12);
+  border-left: 3px solid var(--brand, #c40000); 
+}
+
+/* En ambos modos, el texto será ligeramente más oscuro/claro que el normal
+  para asegurar el contraste sobre el fondo de color.
+*/
+.table tbody tr.folder-row td {
+  color: var(--text-heavy);
+  font-weight: 500;
+}
+
+/* Al seleccionar, el borde se hace más fuerte */
+.table tbody tr.folder-row.selected {
+  outline: 2px solid var(--brand, #c40000);
+  outline-offset: 1px;
+}

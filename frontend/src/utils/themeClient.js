@@ -1,18 +1,22 @@
 // src/utils/themeClient.js
 
 // === Helpers ===
+
+// --- MODIFICADO: Ahora hexToRgb devuelve un string "r, g, b" ---
 function hexToRgb(hex) {
   const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-  if (!m) return { r: 196, g: 0, b: 0 }; // fallback rojo
-  return {
-    r: parseInt(m[1], 16),
-    g: parseInt(m[2], 16),
-    b: parseInt(m[3], 16)
-  };
+  if (!m) return '196, 0, 0'; // fallback rojo como string
+  
+  const r = parseInt(m[1], 16);
+  const g = parseInt(m[2], 16);
+  const b = parseInt(m[3], 16);
+  return `${r}, ${g}, ${b}`;
 }
 
 function getOnPrimary(hex) {
-  const { r, g, b } = hexToRgb(hex);
+  // Para esta función, necesitamos los valores numéricos, así que los parseamos aquí
+  const rgbString = hexToRgb(hex);
+  const [r, g, b] = rgbString.split(',').map(Number);
   const luma = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
   return luma < 0.5 ? "#fff" : "#000";
 }
@@ -23,8 +27,15 @@ export function applyBrand(hex) {
     const on = getOnPrimary(hex);
     const root = document.documentElement;
     root.style.setProperty("--brand", hex);
-    root.style.setProperty("--topbar-bg", hex);     // asegura topbar = brand
-    root.style.setProperty("--on-primary", on);     // texto legible sobre brand
+    root.style.setProperty("--topbar-bg", hex);      // asegura topbar = brand
+    root.style.setProperty("--on-primary", on);      // texto legible sobre brand
+
+    // --- ESTA ES LA LÍNEA NUEVA ---
+    // Creamos y aplicamos la variable --brand-rgb
+    const rgb = hexToRgb(hex);
+    root.style.setProperty("--brand-rgb", rgb);
+    // --- FIN DE LA LÍNEA NUEVA ---
+
     localStorage.setItem("brand_color", hex);
   } catch (e) {
     console.warn("Error aplicando color de marca:", e);

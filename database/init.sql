@@ -150,3 +150,6 @@ ON CONFLICT(id) DO NOTHING;
 INSERT INTO app_config (id, topbar_color, topbar_text, document_title, login_message)
 VALUES (1, '#c40000', 'BigIA 2.0', 'BigIA 2.0', 'Acceso a BigIA 2.0')
 ON CONFLICT DO NOTHING;
+
+-- Sincroniza el contador de IDs de la tabla menu_items para evitar conflictos
+SELECT setval('menu_items_id_seq', (SELECT MAX(id) FROM menu_items));

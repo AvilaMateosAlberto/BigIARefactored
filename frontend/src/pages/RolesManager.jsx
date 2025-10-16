@@ -1,8 +1,48 @@
-// BigIA2Frontend/src/pages/RolesManager.jsx
 import React, { useState, useEffect } from 'react';
 import api from '../api/axiosInstance';
 import { apiError, confirm, loading, close, toastOk } from '../ui/alerts';
 import './pagesStyles/RolesManager.css';
+
+// Componente para un item de permiso editable
+function EditablePermission({ permission, onSave, onDelete }) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [name, setName] = useState(permission.name);
+
+  const handleSave = async () => {
+    if (name.trim() === permission.name) {
+      setIsEditing(false);
+      return;
+    }
+    await onSave(permission.id, name);
+    setIsEditing(false);
+  };
+
+  const handleDelete = () => {
+    onDelete(permission);
+  };
+
+  return (
+    <div className="permission-item">
+      {isEditing ? (
+        <input
+          type="text"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          onBlur={handleSave}
+          onKeyDown={(e) => e.key === 'Enter' && handleSave()}
+          autoFocus
+        />
+      ) : (
+        <span>{permission.name}</span>
+      )}
+      <div className="permission-actions">
+        <button onClick={() => setIsEditing(!isEditing)} title="Editar">{isEditing ? '...' : '✎'}</button>
+        <button onClick={handleDelete} title="Eliminar">✕</button>
+      </div>
+    </div>
+  );
+}
+
 
 export default function RolesManager() {
   const [roles, setRoles] = useState([]);
@@ -12,6 +52,7 @@ export default function RolesManager() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [newRoleName, setNewRoleName] = useState('');
+  const [newPermissionName, setNewPermissionName] = useState('');
 
   async function fetchData() {
     setIsLoading(true);
@@ -113,12 +154,57 @@ export default function RolesManager() {
     }
   };
 
+  // --- NUEVAS FUNCIONES PARA GESTIONAR PERMISOS GLOBALES ---
+
+  const handleCreatePermission = async (e) => {
+    e.preventDefault();
+    if (!newPermissionName.trim()) return;
+    
+    loading('Creando permiso...');
+    try {
+        const { data: newPermission } = await api.post('/roles/permissions', { name: newPermissionName });
+        setAllPermissions([...allPermissions, newPermission].sort((a,b) => a.name.localeCompare(b.name)));
+        setNewPermissionName('');
+        close();
+        toastOk('Permiso creado');
+    } catch (error) {
+        close();
+        apiError(error, 'No se pudo crear el permiso');
+    }
+  };
+
+  const handleUpdatePermission = async (id, name) => {
+    try {
+        await api.put(`/roles/permissions/${id}`, { name });
+        setAllPermissions(allPermissions.map(p => p.id === id ? { ...p, name } : p));
+        toastOk('Permiso actualizado');
+    } catch (error) {
+        apiError(error, 'No se pudo actualizar el permiso');
+    }
+  };
+
+  const handleDeletePermission = async (permission) => {
+    const confirmation = await confirm('¿Eliminar Permiso?', `Se eliminará "${permission.name}". Esto lo quitará de todos los roles que lo usen.`);
+    if (!confirmation.isConfirmed) return;
+
+    loading('Eliminando permiso...');
+    try {
+        await api.delete(`/roles/permissions/${permission.id}`);
+        setAllPermissions(allPermissions.filter(p => p.id !== permission.id));
+        close();
+        toastOk('Permiso eliminado');
+    } catch (error) {
+        close();
+        apiError(error, 'No se pudo eliminar el permiso.');
+    }
+  };
+
 
   return (
     <div className="roles-manager-container">
       <div className="roles-list-panel">
         <h3>Roles</h3>
-        {isLoading ? <p>Cargando roles...</p> : (
+        {isLoading ? <p>Cargando...</p> : (
           <>
             <ul className="roles-list">
               {roles.map((role) => (
@@ -156,38 +242,61 @@ export default function RolesManager() {
         )}
       </div>
 
-      <div className="permissions-panel">
-        {selectedRole ? (
-          <>
-            <h3>Permisos para "{selectedRole.name}"</h3>
-            <div className="permissions-grid">
-              {allPermissions.map((permission) => (
-                <label key={permission.id} className="permission-label">
-                  <input
-                    type="checkbox"
-                    checked={permissionsForSelectedRole.has(permission.id)}
-                    onChange={() => handlePermissionToggle(permission.id)}
-                    // --- CORRECCIÓN AQUÍ ---
-                    // El rol de Admin (id=2) no se puede modificar.
-                    disabled={isSaving || selectedRole.id === 2}
-                  />
-                  {permission.name}
-                </label>
-              ))}
+      <div className="right-panels-container">
+        <div className="permissions-panel">
+          {selectedRole ? (
+            <>
+              <h3>Permisos para "{selectedRole.name}"</h3>
+              <div className="permissions-grid">
+                {allPermissions.map((permission) => (
+                  <label key={permission.id} className="permission-label">
+                    <input
+                      type="checkbox"
+                      checked={permissionsForSelectedRole.has(permission.id)}
+                      onChange={() => handlePermissionToggle(permission.id)}
+                      disabled={isSaving || selectedRole.id === 2}
+                    />
+                    {permission.name}
+                  </label>
+                ))}
+              </div>
+              <div className="actions">
+                <button onClick={handleSavePermissions} disabled={isSaving || selectedRole.id === 2}>
+                  {isSaving ? 'Guardando...' : 'Guardar Permisos'}
+                </button>
+                {selectedRole.id === 2 && <small className="muted">El rol de Admin tiene todos los permisos y no se puede modificar.</small>}
+              </div>
+            </>
+          ) : (
+            <div className="placeholder">
+              <p>Selecciona un rol de la lista para ver y editar sus permisos.</p>
             </div>
-            <div className="actions">
-              {/* --- CORRECCIÓN AQUÍ --- */}
-              <button onClick={handleSavePermissions} disabled={isSaving || selectedRole.id === 2}>
-                {isSaving ? 'Guardando...' : 'Guardar Permisos'}
-              </button>
-              {selectedRole.id === 2 && <small className="muted">El rol de Admin tiene todos los permisos y no se puede modificar.</small>}
+          )}
+        </div>
+
+        {/* --- NUEVO PANEL DE GESTIÓN DE PERMISOS GLOBALES --- */}
+        <div className="global-permissions-panel">
+            <h3>Administrar Permisos Globales</h3>
+            <div className="permissions-list">
+                {allPermissions.map(p => (
+                    <EditablePermission 
+                        key={p.id} 
+                        permission={p}
+                        onSave={handleUpdatePermission}
+                        onDelete={handleDeletePermission}
+                    />
+                ))}
             </div>
-          </>
-        ) : (
-          <div className="placeholder">
-            <p>Selecciona un rol de la lista para ver y editar sus permisos.</p>
-          </div>
-        )}
+            <form onSubmit={handleCreatePermission} className="new-permission-form">
+                <input 
+                    type="text"
+                    value={newPermissionName}
+                    onChange={(e) => setNewPermissionName(e.target.value)}
+                    placeholder="Nombre del nuevo permiso"
+                />
+                <button type="submit" disabled={!newPermissionName.trim()}>Crear Permiso</button>
+            </form>
+        </div>
       </div>
     </div>
   );

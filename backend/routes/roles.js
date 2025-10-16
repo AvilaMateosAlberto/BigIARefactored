@@ -4,11 +4,12 @@ const router = express.Router();
 const { verifyToken, authorizePermission } = require('../middleware/auth');
 const rolesService = require('../services/rolesService');
 
-// Usaremos un permiso de admin existente para proteger estas rutas
-const ADMIN_PERMISSION = 'can_view_admin_dashboards';
+// Usamos el permiso que creamos en el init.sql
+const ROLES_PERMISSION = 'can_manage_roles';
 
-// GET /api/roles - Obtiene todos los roles y sus permisos
-router.get('/', verifyToken, authorizePermission(ADMIN_PERMISSION), async (req, res, next) => {
+// --- RUTAS DE ROLES ---
+
+router.get('/', verifyToken, authorizePermission(ROLES_PERMISSION), async (req, res, next) => {
   try {
     const roles = await rolesService.getAllRolesWithPermissions();
     res.json(roles);
@@ -17,18 +18,7 @@ router.get('/', verifyToken, authorizePermission(ADMIN_PERMISSION), async (req, 
   }
 });
 
-// GET /api/roles/all-permissions - Obtiene la lista de todos los permisos posibles
-router.get('/all-permissions', verifyToken, authorizePermission(ADMIN_PERMISSION), async (req, res, next) => {
-  try {
-    const permissions = await rolesService.getAllPermissions();
-    res.json(permissions);
-  } catch (err) {
-    next(err);
-  }
-});
-
-// POST /api/roles - Crea un nuevo rol
-router.post('/', verifyToken, authorizePermission(ADMIN_PERMISSION), async (req, res, next) => {
+router.post('/', verifyToken, authorizePermission(ROLES_PERMISSION), async (req, res, next) => {
   try {
     const { name } = req.body;
     const newRole = await rolesService.createRole(name);
@@ -38,8 +28,7 @@ router.post('/', verifyToken, authorizePermission(ADMIN_PERMISSION), async (req,
   }
 });
 
-// PUT /api/roles/:id/permissions - Actualiza los permisos de un rol
-router.put('/:id/permissions', verifyToken, authorizePermission(ADMIN_PERMISSION), async (req, res, next) => {
+router.put('/:id/permissions', verifyToken, authorizePermission(ROLES_PERMISSION), async (req, res, next) => {
   try {
     const { id } = req.params;
     const { permissionIds } = req.body;
@@ -50,8 +39,7 @@ router.put('/:id/permissions', verifyToken, authorizePermission(ADMIN_PERMISSION
   }
 });
 
-// DELETE /api/roles/:id - Elimina un rol
-router.delete('/:id', verifyToken, authorizePermission(ADMIN_PERMISSION), async (req, res, next) => {
+router.delete('/:id', verifyToken, authorizePermission(ROLES_PERMISSION), async (req, res, next) => {
   try {
     const { id } = req.params;
     await rolesService.deleteRole(Number(id));
@@ -60,5 +48,49 @@ router.delete('/:id', verifyToken, authorizePermission(ADMIN_PERMISSION), async 
     next(err);
   }
 });
+
+
+// --- RUTAS DE PERMISOS ---
+
+router.get('/all-permissions', verifyToken, authorizePermission(ROLES_PERMISSION), async (req, res, next) => {
+  try {
+    const permissions = await rolesService.getAllPermissions();
+    res.json(permissions);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post('/permissions', verifyToken, authorizePermission(ROLES_PERMISSION), async (req, res, next) => {
+    try {
+        const { name } = req.body;
+        const newPermission = await rolesService.createPermission(name);
+        res.status(201).json(newPermission);
+    } catch (err) {
+        next(err);
+    }
+});
+
+router.put('/permissions/:id', verifyToken, authorizePermission(ROLES_PERMISSION), async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const { name } = req.body;
+        const updatedPermission = await rolesService.updatePermission(id, name);
+        res.json(updatedPermission);
+    } catch (err) {
+        next(err);
+    }
+});
+
+router.delete('/permissions/:id', verifyToken, authorizePermission(ROLES_PERMISSION), async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        await rolesService.deletePermission(id);
+        res.status(204).send();
+    } catch (err) {
+        next(err);
+    }
+});
+
 
 module.exports = router;

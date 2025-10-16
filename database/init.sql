@@ -92,7 +92,8 @@ INSERT INTO permissions (name) VALUES
   ('can_view_users'),
   ('can_create_users'),
   ('can_delete_users'),
-  ('can_manage_endpoints')
+  ('can_manage_endpoints'),
+  ('can_manage_roles')
 ON CONFLICT DO NOTHING;
 
 -- Plantilla de permisos
@@ -101,7 +102,7 @@ SELECT 1, id FROM permissions WHERE name IN ('can_view_user_dashboards','can_vie
 ON CONFLICT DO NOTHING;
 
 INSERT INTO rol_permissions (role_id, permission_id)
-SELECT 2, id FROM permissions
+SELECT 2, id FROM permissions -- El admin tiene todos los permisos
 ON CONFLICT DO NOTHING;
 
 -- Usuario admin (icono AdminPanelSettings por defecto)
@@ -128,21 +129,23 @@ ON CONFLICT DO NOTHING;
 
 -- Menú inicial
 INSERT INTO public.menu_items
-(label, url, route, icon, "position", permission_id, type, parent_id) VALUES
-('Fortigate 100F', NULL, NULL, 'FireExtinguisher', 2, 1, 'folder', NULL),
-('Reportes', '/revealjs/', '/reportes', 'BarChart', 3, 2, 'link', NULL),
-('Kibana', '/kibana', '/kbmain', 'AutoAwesomeMosaicSharp', 4, 2, 'link', NULL),
-('SOAR', '/n8nsoar', '/soar', 'AutoFixHigh', 5, 2, 'link', NULL),
-('Configuración', NULL, NULL, 'Settings', 6, 2, 'folder', NULL),
-('FG100F Ingress Events', '/kibana/app/dashboards?auth_provider_hint=publicaccess#/view/4dbc62c0-831c-11f0-8232-87d9605708a2?embed=true&_g=%28refreshInterval%3A%28pause%3A%21t%2Cvalue%3A60000%29%2Ctime%3A%28from%3Anow-15m%2Cto%3Anow%29%29&show-query-input=true&show-time-filter=true', '/dashboards/fg100fingev', 'ArrowDownward', 4, 1, 'link', 1),
-('Gestor endpoints', NULL, '/configuracion/endpoints', 'Tune', 1, 7, 'link', 5),
-('Usuarios', NULL, '/configuracion/usuarios', 'People', 2, 4, 'link', 5),
-('Personalización', NULL, '/configuracion/personalizacion', 'Palette', 3, 2, 'link', 5),
-('Inicio', 'https://www.geserisk.es/', '/inicio', 'Home', 1, 1, 'link', NULL),
-('FG100F Events', '/kibana/app/dashboards?auth_provider_hint=publicaccess#/view/a0b097fb-5eab-4b6d-9155-8b83974087f8?embed=true&_g=%28refreshInterval%3A%28pause%3A%21t%2Cvalue%3A60000%29%2Ctime%3A%28from%3Anow-15m%2Cto%3Anow%29%29&show-query-input=true&show-time-filter=true', '/dashboards/fg100fevents', 'EmojiEvents', 2, 1, 'link', 1),
-('FG100F Egress Events', '/kibana/app/dashboards?auth_provider_hint=publicaccess#/view/263b7880-831c-11f0-8232-87d9605708a2?embed=true&_g=%28refreshInterval%3A%28pause%3A%21t%2Cvalue%3A60000%29%2Ctime%3A%28from%3Anow-15m%2Cto%3Anow%29%29&show-query-input=true&show-time-filter=true', '/dashboards/mfegressevents', 'ArrowUpward', 3, 1, 'link', 1),
-('Mashfrog Firewall Overview', '/kibana/app/dashboards?auth_provider_hint=publicaccess#/view/fortinet_fortigate-d0cd8230-0c8b-11ed-bb95-158df2ca77e4?embed=true&_g=%28refreshInterval%3A%28pause%3A%21t%2Cvalue%3A60000%29%2Ctime%3A%28from%3Anow-15m%2Cto%3Anow%29%29&show-query-input=true&show-time-filter=true', '/fortigate-100f/mfover', 'RemoveRedEyeOutlined', 1, 1, 'link', 1);
- 
+(id, label, url, route, icon, "position", permission_id, type, parent_id) VALUES
+(1, 'Fortigate 100F', NULL, NULL, 'FireExtinguisher', 2, 1, 'folder', NULL),
+(2, 'Reportes', '/revealjs/', '/reportes', 'BarChart', 3, 3, 'link', NULL),
+(3, 'Kibana', '/kibana', '/kbmain', 'AutoAwesomeMosaicSharp', 4, 2, 'link', NULL),
+(4, 'SOAR', '/n8nsoar', '/soar', 'AutoFixHigh', 5, 2, 'link', NULL),
+(5, 'Configuración', NULL, NULL, 'Settings', 6, 2, 'folder', NULL),
+(6, 'FG100F Ingress Events', '/kibana/app/dashboards?auth_provider_hint=publicaccess#/view/4dbc62c0-831c-11f0-8232-87d9605708a2?embed=true&_g=%28refreshInterval%3A%28pause%3A%21t%2Cvalue%3A60000%29%2Ctime%3A%28from%3Anow-15m%2Cto%3Anow%29%29&show-query-input=true&show-time-filter=true', '/dashboards/fg100fingev', 'ArrowDownward', 4, 1, 'link', 1),
+(7, 'Gestor endpoints', NULL, '/configuracion/endpoints', 'Tune', 1, 7, 'link', 5),
+(8, 'Usuarios', NULL, '/configuracion/usuarios', 'People', 2, 4, 'link', 5),
+(9, 'Personalización', NULL, '/configuracion/personalizacion', 'Palette', 3, 2, 'link', 5),
+(10, 'Inicio', 'https://www.geserisk.es/', '/inicio', 'Home', 1, 1, 'link', NULL),
+(11, 'FG100F Events', '/kibana/app/dashboards?auth_provider_hint=publicaccess#/view/a0b097fb-5eab-4b6d-9155-8b83974087f8?embed=true&_g=%28refreshInterval%3A%28pause%3A%21t%2Cvalue%3A60000%29%2Ctime%3A%28from%3Anow-15m%2Cto%3Anow%29%29&show-query-input=true&show-time-filter=true', '/dashboards/fg100fevents', 'EmojiEvents', 2, 1, 'link', 1),
+(12, 'FG100F Egress Events', '/kibana/app/dashboards?auth_provider_hint=publicaccess#/view/263b7880-831c-11f0-8232-87d9605708a2?embed=true&_g=%28refreshInterval%3A%28pause%3A%21t%2Cvalue%3A60000%29%2Ctime%3A%28from%3Anow-15m%2Cto%3Anow%29%29&show-query-input=true&show-time-filter=true', '/dashboards/mfegressevents', 'ArrowUpward', 3, 1, 'link', 1),
+(13, 'Mashfrog Firewall Overview', '/kibana/app/dashboards?auth_provider_hint=publicaccess#/view/fortinet_fortigate-d0cd8230-0c8b-11ed-bb95-158df2ca77e4?embed=true&_g=%28refreshInterval%3A%28pause%3A%21t%2Cvalue%3A60000%29%2Ctime%3A%28from%3Anow-15m%2Cto%3Anow%29%29&show-query-input=true&show-time-filter=true', '/fortigate-100f/mfover', 'RemoveRedEyeOutlined', 1, 1, 'link', 1),
+(14, 'Roles y Permisos', NULL, '/configuracion/roles', 'AdminPanelSettings', 4, 8, 'link', 5)
+ON CONFLICT(id) DO NOTHING;
+
 -- Configuración app
 INSERT INTO app_config (id, topbar_color, topbar_text, document_title, login_message)
 VALUES (1, '#c40000', 'BigIA 2.0', 'BigIA 2.0', 'Acceso a BigIA 2.0')

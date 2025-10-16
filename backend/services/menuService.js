@@ -78,13 +78,32 @@ async function getPermissionsByRol(role_id) {
     return res.rows.map(r => r.name);
 }
   
+// --- FUNCIÓN MODIFICADA ---
 async function getMenuByRol(role_id) {
+    // Esta nueva consulta recursiva soluciona el problema de las carpetas padre.
+    // 1. Obtiene los items a los que el rol tiene acceso directo (o son públicos).
+    // 2. Luego, de forma recursiva, sube por el árbol para traerse también
+    //    todas las carpetas padre necesarias para construir el menú completo.
     const { rows } = await pool.query(
-      `SELECT m.id, m.label, m.url, m.route, m.icon, m.position, m.type, m.parent_id
-       FROM menu_items m
-       WHERE m.permission_id IN (SELECT permission_id FROM rol_permissions WHERE role_id = $1)
-       OR m.permission_id IS NULL
-       ORDER BY m.parent_id NULLS FIRST, m.position, m.id`,
+      `
+      WITH RECURSIVE accessible_menu AS (
+        -- Anchor: Items que el usuario puede ver directamente
+        SELECT id, label, url, route, icon, position, type, parent_id
+        FROM menu_items
+        WHERE 
+          permission_id IS NULL OR 
+          permission_id IN (SELECT permission_id FROM rol_permissions WHERE role_id = $1)
+
+        UNION
+
+        -- Recursive part: Sube para encontrar los padres de los items ya encontrados
+        SELECT m.id, m.label, m.url, m.route, m.icon, m.position, m.type, m.parent_id
+        FROM menu_items m
+        INNER JOIN accessible_menu am ON m.id = am.parent_id
+      )
+      SELECT * FROM accessible_menu
+      ORDER BY parent_id NULLS FIRST, position, id;
+      `,
       [role_id]
     );
   
@@ -97,6 +116,8 @@ async function getMenuByRol(role_id) {
   
     const build = (parentId = null) => {
       const arr = byParent.get(parentId) || [];
+      // Aseguramos el orden dentro de cada nivel
+      arr.sort((a, b) => a.position - b.position);
       return arr.map((it) => {
         const node = { id: it.id, label: it.label, url: it.url, route: it.route, icon: it.icon, position: it.position, type: it.type };
         if (it.type === 'folder') node.children = build(it.id);
@@ -242,6 +263,4 @@ module.exports = {
     createMenuItem,
     updateMenuItem,
     deleteMenuItem,
-    // La reordenación es compleja, la dejamos para una segunda fase si quieres
 };
-

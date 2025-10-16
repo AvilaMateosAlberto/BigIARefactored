@@ -17,6 +17,7 @@ import IconResolver from "./components/IconResolver";
 import { useApp } from "./context/AppContext";
 import UserManagement from "./pages/UserManagement";
 import ReportPage from "./pages/ReportPage";
+import RolesManager from './pages/RolesManager';
 
 /* ============== Tema ============== */
 function applyTheme(next) {
@@ -55,6 +56,7 @@ export default function App() {
           <Route path="/configuracion/usuarios" element={<UserManagement handle={{ title: "Usuarios"}}/>} />
           <Route path="/configuracion/endpoints" element={<EndpointsManager handle={{ title: "Endpoints"}}/>} />
           <Route path="/reportes" element={<ReportPage />} />
+          <Route path="/configuracion/roles" element={<RolesManager />} />
           {/* 👇 TODO lo demás viene del menú y lo resuelve DynamicRouteRenderer */}
           <Route path="*" element={<DynamicRouteRenderer />} />
         </Route>

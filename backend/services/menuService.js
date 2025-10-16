@@ -2,7 +2,7 @@ const pool = require('../db');
 const { BadRequestError, NotFoundError, ConflictError } = require('../errors/customErrors');
 
 // --- Helpers Internos (no se exportan) ---
-
+// (Estas funciones no cambian)
 function slugify(text) {
   return String(text || '')
     .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
@@ -80,51 +80,65 @@ async function getPermissionsByRol(role_id) {
   
 // --- FUNCIÓN MODIFICADA ---
 async function getMenuByRol(role_id) {
-    // Esta nueva consulta recursiva soluciona el problema de las carpetas padre.
-    // 1. Obtiene los items a los que el rol tiene acceso directo (o son públicos).
-    // 2. Luego, de forma recursiva, sube por el árbol para traerse también
-    //    todas las carpetas padre necesarias para construir el menú completo.
-    const { rows } = await pool.query(
-      `
-      WITH RECURSIVE accessible_menu AS (
-        -- Anchor: Items que el usuario puede ver directamente
-        SELECT id, label, url, route, icon, position, type, parent_id
-        FROM menu_items
-        WHERE 
-          permission_id IS NULL OR 
-          permission_id IN (SELECT permission_id FROM rol_permissions WHERE role_id = $1)
-
-        UNION
-
-        -- Recursive part: Sube para encontrar los padres de los items ya encontrados
-        SELECT m.id, m.label, m.url, m.route, m.icon, m.position, m.type, m.parent_id
-        FROM menu_items m
-        INNER JOIN accessible_menu am ON m.id = am.parent_id
-      )
-      SELECT * FROM accessible_menu
-      ORDER BY parent_id NULLS FIRST, position, id;
-      `,
-      [role_id]
-    );
+  // 1. Obtenemos TODOS los items del menú y TODOS los permisos del rol.
+  const { rows: allItems } = await pool.query('SELECT * FROM menu_items ORDER BY position');
+  const { rows: rolePerms } = await pool.query('SELECT permission_id FROM rol_permissions WHERE role_id = $1', [role_id]);
   
-    const byParent = new Map();
-    for (const r of rows) {
-      const key = r.parent_id ?? null;
-      if (!byParent.has(key)) byParent.set(key, []);
-      byParent.get(key).push(r);
+  const itemsById = new Map(allItems.map(item => [item.id, item]));
+  const userPermissions = new Set(rolePerms.map(p => p.permission_id));
+  const memo = new Map(); // Caché para no recalcular permisos
+
+  // 2. Función recursiva que comprueba si se tiene acceso a un item y a TODOS sus padres.
+  function hasAccess(itemId) {
+    if (memo.has(itemId)) return memo.get(itemId);
+
+    const item = itemsById.get(itemId);
+    if (!item) {
+      memo.set(itemId, false);
+      return false;
     }
-  
-    const build = (parentId = null) => {
-      const arr = byParent.get(parentId) || [];
-      // Aseguramos el orden dentro de cada nivel
-      arr.sort((a, b) => a.position - b.position);
-      return arr.map((it) => {
-        const node = { id: it.id, label: it.label, url: it.url, route: it.route, icon: it.icon, position: it.position, type: it.type };
-        if (it.type === 'folder') node.children = build(it.id);
-        return node;
-      });
-    };
-    return build(null);
+
+    // Un item es visible si es público (sin permiso) O si el usuario tiene el permiso.
+    const canSeeItem = item.permission_id === null || userPermissions.has(item.permission_id);
+    if (!canSeeItem) {
+      memo.set(itemId, false);
+      return false;
+    }
+    
+    // Si el item no tiene padre y podemos verlo, el camino es válido.
+    if (item.parent_id === null) {
+      memo.set(itemId, true);
+      return true;
+    }
+    
+    // Si tiene padre, comprobamos recursivamente el acceso al padre.
+    const parentHasAccess = hasAccess(item.parent_id);
+    memo.set(itemId, parentHasAccess);
+    return parentHasAccess;
+  }
+
+  // 3. Filtramos la lista completa de items, quedándonos solo con los que superan la validación.
+  const accessibleItems = allItems.filter(item => hasAccess(item.id));
+
+  // 4. Construimos el árbol final solo con los items a los que se tiene acceso.
+  const byParent = new Map();
+  for (const item of accessibleItems) {
+    const key = item.parent_id ?? null;
+    if (!byParent.has(key)) byParent.set(key, []);
+    byParent.get(key).push(item);
+  }
+
+  const build = (parentId = null) => {
+    const arr = byParent.get(parentId) || [];
+    arr.sort((a, b) => a.position - b.position);
+    return arr.map((it) => {
+      const node = { id: it.id, label: it.label, url: it.url, route: it.route, icon: it.icon, position: it.position, type: it.type };
+      if (it.type === 'folder') node.children = build(it.id);
+      return node;
+    });
+  };
+
+  return build(null);
 }
 
 async function getAllMenuItems() {
@@ -230,7 +244,6 @@ async function updateMenuItem(id, { label, url, route, icon, permission_id, type
         if (err.code === '23505' && /route/.test(String(err.constraint || ''))) {
             throw new ConflictError('Ruta duplicada. Cambia el slug o su ubicación.');
         }
-        // Captura el error de rebuildDescendantLinkRoutes también
         if (err.message.includes('No se pudo recomputar')) {
             throw new ConflictError('Conflicto al recomputar rutas de descendientes. Revisa posibles duplicados de slug.');
         }

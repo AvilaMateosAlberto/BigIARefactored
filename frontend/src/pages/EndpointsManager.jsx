@@ -11,7 +11,7 @@ import {
   loading,
   close as closeAlert,
   toastOk,
-  removed,               // ✅ IMPORTAMOS ESTO
+  removed,
   apiError,
   confirmDeleteItem,
   orderSaved,
@@ -32,7 +32,7 @@ export default function EndpointsManager() {
     url: "",
     route: buildAutoRoute(),
     icon: "",
-    permission_id: "",
+    permission_id: "", // <-- CAMBIO 1: El valor inicial ya era "", lo cual es perfecto.
     type: "link",
     parent_id: null,
     position: 0,
@@ -105,7 +105,7 @@ export default function EndpointsManager() {
         url: row.url || "",
         route: row.route || "",
         icon: row.icon || "",
-        permission_id: row.permission_id ?? null,
+        permission_id: row.permission_id ?? "", // <-- CAMBIO 2: Usamos "" en lugar de null
         type: row.type || "link",
         parent_id: row.parent_id ?? null,
         position: row.position ?? 0,
@@ -117,7 +117,7 @@ export default function EndpointsManager() {
         url: "",
         route: buildAutoRoute(),
         icon: "",
-        permission_id: null,
+        permission_id: "", // <-- CAMBIO 3: Unificamos a "" en lugar de null
         type: "link",
         parent_id: null,
         position: 0,
@@ -238,7 +238,7 @@ export default function EndpointsManager() {
       await refreshContextMenu();
       onSelect(null);
       closeAlert();
-      removed("Elemento eliminado"); // ✅ ahora sí
+      removed("Elemento eliminado");
     } catch (e) {
       closeAlert();
       apiError(e, "No se pudo eliminar");
@@ -250,7 +250,7 @@ export default function EndpointsManager() {
     toastOk("Menú recargado en la app");
   }
 
-  // ========== Drag & Drop ==========
+  // ========== Drag & Drop (sin cambios) ==========
   const [dragInfo, setDragInfo] = useState(null);
 
   function onDragStartRow(row) {
@@ -276,7 +276,6 @@ export default function EndpointsManager() {
   function onDropRow(targetRow) {
     if (!dragInfo) return;
 
-    // 1) Reordenar top-level (carpetas)
     if (dragInfo.__isFolder && dragInfo.parent_id == null && targetRow.parent_id == null) {
       const reTop = moveArrayBlockTopLevel(dragInfo.id, targetRow.id);
       const next = items.map(it => {
@@ -291,7 +290,6 @@ export default function EndpointsManager() {
       return;
     }
 
-    // 2) Reordenar links dentro de la misma carpeta
     if (!dragInfo.__isFolder && dragInfo.parent_id === targetRow.parent_id) {
       const siblings = items
         .filter(x => (x.parent_id ?? null) === (targetRow.parent_id ?? null))
@@ -348,7 +346,6 @@ export default function EndpointsManager() {
 
   return (
     <div className="endpoints-container">
-      {/* LISTA */}
       <div className="list-panel">
         <div className="panel-header">
           <h2>Endpoints</h2>
@@ -405,7 +402,6 @@ export default function EndpointsManager() {
         )}
       </div>
 
-      {/* FORMULARIO */}
       <div className="form-panel">
         <div className="panel-header">
           <h2>{selected ? "Editar" : "Nuevo"}</h2>
@@ -453,7 +449,6 @@ export default function EndpointsManager() {
             />
           </label>
 
-
           <label title="URL externa (opcional). Si pones URL, la ruta puede quedar vacía.">
             URL
             <input
@@ -476,10 +471,11 @@ export default function EndpointsManager() {
             <select
               className="input"
               name="permission_id"
-              value={form.permission_id}
+              value={form.permission_id ?? ""}
               onChange={handleChange}
-              placeholder="Seleccionar..."
             >
+              {/* --- CAMBIO 4: Añadimos la opción placeholder --- */}
+              <option value="">-- Sin permiso específico --</option>
               {permissionslist.map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.name}

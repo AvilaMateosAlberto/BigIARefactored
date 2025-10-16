@@ -5,13 +5,10 @@ const API_BASE = "/api";
 
 const api = axios.create({
   baseURL: API_BASE,
-  withCredentials: true, // necesario para enviar/recibir la cookie httpOnly del refresh
+  withCredentials: true,
 });
 
-let accessToken = null;
-
 export const setAccessToken = (token) => {
-  accessToken = token;
   if (token) {
     localStorage.setItem("accessToken", token);
   } else {
@@ -20,60 +17,74 @@ export const setAccessToken = (token) => {
 };
 
 api.interceptors.request.use((config) => {
-  accessToken = localStorage.getItem("accessToken");
-  if (accessToken) config.headers.Authorization = `Bearer ${accessToken}`;
+  const token = localStorage.getItem("accessToken");
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
   return config;
 });
 
-// (Opcional) Refresh automático en 401.
-// Descomenta este bloque cuando quieras activarlo:
-// let isRefreshing = false;
-// let queue = [];
+// --- LÓGICA DE REFRESH DEFINITIVA ---
 
-// api.interceptors.response.use(
-//   (res) => res,
-//   async (error) => {
-//     const { response, config } = error;
-//     if (!response) return Promise.reject(error);
-//     if (response.status !== 401 || config._retry) return Promise.reject(error);
+let isRefreshing = false;
+let failedQueue = [];
 
-//     config._retry = true;
+const processQueue = (error, token = null) => {
+  failedQueue.forEach(prom => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+  failedQueue = [];
+};
 
-//     if (!isRefreshing) {
-//       isRefreshing = true;
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
 
-//       try {
-//         const { data } = await api.post("/auth/refresh"); // cookie httpOnly
-//         setAccessToken(data.accessToken);
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      if (originalRequest.url.includes('/auth/login')) {
+        return Promise.reject(error);
+      }
 
-//         // resolvemos todas las promesas pendientes
-//         queue.forEach(({ resolve }) => resolve());
-//         queue = [];
+      if (isRefreshing) {
+        return new Promise(function(resolve, reject) {
+          failedQueue.push({ resolve, reject });
+        }).then(token => {
+          originalRequest.headers['Authorization'] = 'Bearer ' + token;
+          return api(originalRequest);
+        });
+      }
 
-//         return api(config);
-//       } catch (e) {
-//         // rechazamos todas las promesas pendientes
-//         queue.forEach(({ reject }) => reject(e));
-//         queue = [];
+      originalRequest._retry = true;
+      isRefreshing = true;
 
-//         window.dispatchEvent(new Event("sessionExpired"));
-//         return Promise.reject(e);
-//       } finally {
-//         isRefreshing = false;
-//       }
-//     }
+      try {
+        const { data } = await api.post("/auth/refresh");
+        setAccessToken(data.accessToken);
+        // Actualizamos la cabecera por defecto para futuras peticiones
+        api.defaults.headers.common['Authorization'] = 'Bearer ' + data.accessToken;
+        // Reintentamos la petición original con el nuevo token
+        originalRequest.headers['Authorization'] = 'Bearer ' + data.accessToken;
+        processQueue(null, data.accessToken);
+        return api(originalRequest);
+      } catch (refreshError) {
+        processQueue(refreshError, null);
+        setAccessToken(null);
+        // Si el refresh falla, es el único momento en que la sesión está realmente muerta.
+        // Disparamos el evento para que AppContext se entere y limpie la sesión.
+        window.dispatchEvent(new Event("sessionExpired"));
+        return Promise.reject(refreshError);
+      } finally {
+        isRefreshing = false;
+      }
+    }
 
-//     // Si ya hay un refresh en curso, devolvemos promesa que se resolverá o rechazará después
-//     return new Promise((resolve, reject) => {
-//       queue.push({
-//         resolve: () => resolve(api(config)),
-//         reject: (err) => reject(err),
-//       });
-//     });
-//   }
-// );
-
-
-
+    return Promise.reject(error);
+  }
+);
 
 export default api;

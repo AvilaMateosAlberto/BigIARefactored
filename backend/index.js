@@ -13,15 +13,19 @@ const usersRoutes = require('./routes/users');
 const menuRoutes = require('./routes/menu');
 const settingsRoutes = require('./routes/settings');
 const rolesRoutes = require('./routes/roles');
+const revealjsApiRoutes = require('./routes/revealjsapi'); // <- Asegúrate de que esta ruta esté importada
 const { verifyToken } = require('./middleware/auth');
 const errorHandler = require('./middleware/errorHandler');
-const { NotFoundError } = require('./errors/customErrors'); // <-- CAMBIO 1: Importamos el error específico para 404
+const { NotFoundError } = require('./errors/customErrors');
 const app = express();
 
 /* =========================
    Config básica y middlewares
    ========================= */
-app.set('trust proxy', true);            // detrás de Nginx/proxy → IPs/cookies correctas
+// --- CAMBIO 1: Ajuste del 'trust proxy' para seguridad del rate-limiter ---
+// Le decimos que confíe en la primera IP de proxy (ej. Nginx)
+app.set('trust proxy', 1);
+
 app.use(compression());
 app.use(cors({ origin: true, credentials: true }));
 app.use(express.json({ limit: '2mb' }));
@@ -36,7 +40,7 @@ const PUBLIC = [
   { method: 'POST', rx: /^\/api\/auth\/login$/ },
   { method: 'POST', rx: /^\/api\/auth\/refresh$/ },   // <- refresh NO requiere access token
   { method: 'POST', rx: /^\/api\/auth\/logout$/ },    // <- logout debe poder hacerse sin token válido
-  { method: 'GET', rx: /^\/api\/auth\/verify$/ },    // <- verificación basada en cookie rt
+  // { method: 'GET', rx: /^\/api\/auth\/verify$/ }, // Esta ruta no la estamos usando, se puede comentar o quitar
 
   // Ajustes públicos y health
   { method: 'GET', rx: /^\/api\/settings\/public$/ },
@@ -53,9 +57,16 @@ app.use((req, res, next) => {
   const isPublic = PUBLIC.some(p => p.method === req.method && p.rx.test(req.path));
   if (isPublic) return next();
 
-  // Aquí usamos el middleware directamente
-  verifyToken(req, res, () => {
-    // Opcional: mantener cabecera X-Auth-User
+  // --- CAMBIO 2: Manejo de error robusto en la verificación del token ---
+  verifyToken(req, res, (err) => {
+    // Si verifyToken devuelve un error (ej. token caducado o inválido),
+    // lo pasamos al manejador de errores central y detenemos la ejecución aquí.
+    if (err) {
+      return next(err);
+    }
+    
+    // Esta línea solo se ejecutará si el token es válido y req.user existe,
+    // evitando el crash "Cannot read properties of undefined".
     res.setHeader('X-Auth-User', req.user.sub || req.user.id || '');
     next();
   });
@@ -65,12 +76,11 @@ app.use((req, res, next) => {
 /* =========================
    Healthcheck
    ========================= */
-app.get('/api/health', async (_req, res, next) => { // Añadimos 'next' para el manejo de errores
+app.get('/api/health', async (_req, res, next) => {
   try {
     await db.query('SELECT 1');
     res.json({ ok: true, db: 'up' });
   } catch (e) {
-    // Si la base de datos falla, pasamos el error al manejador central
     next(e);
   }
 });
@@ -82,22 +92,17 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', usersRoutes);
 app.use('/api/menu', menuRoutes);
 app.use('/api/settings', settingsRoutes);
-app.use('/api/roles', rolesRoutes); // <-- AÑADIR ESTA LÍNEA
+app.use('/api/roles', rolesRoutes);
+app.use('/revealjsapi', revealjsApiRoutes); // <- Asegúrate de que esta ruta esté registrada
 
 /* =========================
    404 y handler de errores
    ========================= */
-
-// <-- CAMBIO 2: Lógica de 404 y error handler modificada
-// Si ninguna ruta anterior coincide, este middleware se ejecuta y crea un error 404.
 app.use((req, res, next) => {
   next(new NotFoundError(`No se puede encontrar ${req.originalUrl} en este servidor.`));
 });
 
-// El manejador de errores centralizado se encarga de todos los errores pasados a través de next().
-// ¡Debe ser el último middleware!
 app.use(errorHandler);
-
 
 /* =========================
    Arranque con espera a Postgres
@@ -106,9 +111,7 @@ const PORT = parseInt(process.env.PORT || '3001', 10);
 const HOST = process.env.HOST || '0.0.0.0';
 async function bootstrap() {
   try {
-    // Esperamos a que arranque la base de datos
     await db.waitForDb();
-
     app.listen(PORT, HOST, () => {
       console.log(`✅ Backend corriendo en http://${HOST}:${PORT}`);
     });

@@ -1,5 +1,5 @@
 // src/context/AppContext.jsx
-import { createContext, useContext, useEffect, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState, useCallback } from "react";
 import api, { setAccessToken } from "../api/axiosInstance";
 
 const AppContext = createContext();
@@ -10,10 +10,8 @@ export function AppProvider({ children }) {
   const [permissions, setPermissions] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Evita doble ejecución del efecto en dev (StrictMode)
   const didRunRef = useRef(false);
 
-  // Login: guarda user/menu/permissions y accessToken
   const login = (userData, menuData, permissionsData, token) => {
     setUser(userData || null);
     setMenu(menuData || []);
@@ -21,50 +19,45 @@ export function AppProvider({ children }) {
     setAccessToken(token || null);
   };
 
-  // Logout: limpia estado y avisa al backend
-  const logout = async () => {
-    try { await api.post("/auth/logout"); } catch {}
+  const logout = useCallback(async () => {
+    // No necesitamos llamar a la API aquí, porque al limpiar el estado, el usuario será redirigido.
+    // La cookie del backend se invalidará en la siguiente petición o al cerrar el navegador.
     setAccessToken(null);
     setUser(null);
     setMenu([]);
     setPermissions([]);
-  };
+  }, []);
 
-  // Auto-hidratación al montar: usa la cookie httpOnly de refresh
+  // Auto-hidratación al montar la app
   useEffect(() => {
     if (didRunRef.current) return;
     didRunRef.current = true;
 
-    (async () => {
-      const savedToken = localStorage.getItem("accessToken");
+    const restoreSession = async () => {
+      // --- LÓGICA CORREGIDA ---
+      // Ya no usamos un try/catch agresivo.
+      // Simplemente intentamos obtener los datos del usuario.
+      // Si el token ha caducado, el interceptor de axios se encargará
+      // de refrescarlo de forma silenciosa. Si el refresh falla,
+      // el interceptor disparará 'sessionExpired' y el otro useEffect actuará.
+      const { data } = await api.get("/auth/me");
+      login(data.user, data.menu, data.permissions, localStorage.getItem("accessToken"));
+    };
 
-      try {
-        // Si ya hay token, pruébalo directamente
-        if (savedToken) {
-          const { data } = await api.get("/auth/me");
-          login(data.user, data.menu, data.permissions, savedToken);
-        } else if (document.cookie.split(";").some((c) => c.trim().startsWith("rt="))) {
-          const { data } = await api.post("/auth/refresh");
-          const { accessToken, user, menu, permissions } = data;
-          login(user, menu, permissions, accessToken);
-        } 
-      } catch {
-        // Si falla, limpia todo
-        await logout();
-      } finally {
-        setLoading(false);
-      }
-    })();
+    restoreSession().finally(() => {
+      setLoading(false);
+    });
   }, []);
 
-  // Cierre global si el interceptor dispara sessionExpired
+  // Cierre de sesión global cuando el refresh token muere.
   useEffect(() => {
-    const onExpired = () => logout();
+    const onExpired = () => {
+      console.log("Evento sessionExpired recibido, cerrando sesión.");
+      logout();
+    };
     window.addEventListener("sessionExpired", onExpired);
     return () => window.removeEventListener("sessionExpired", onExpired);
-  }, []);
-
-  // Cargamos la aconfiguración de la aplicación desde base de datos
+  }, [logout]);
 
   return (
     <AppContext.Provider

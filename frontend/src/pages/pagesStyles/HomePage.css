@@ -1,0 +1,136 @@
+/* src/pages/pagesStyles/HomePage.css */
+
+.homepage-container {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  text-align: center;
+}
+
+.homepage-header {
+  margin-bottom: 40px;
+}
+
+.homepage-header h1 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: var(--text-heavy);
+}
+
+.homepage-header .subtitle {
+  font-size: 1.1rem;
+  color: var(--text-2);
+  max-width: 600px;
+}
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+  max-width: 900px;
+  width: 100%;
+}
+
+@media (max-width: 768px) {
+  .card-grid {
+    grid-template-columns: 1fr;
+  }
+  .homepage-header h1 {
+    font-size: 2rem;
+  }
+}
+
+.home-card {
+  --card-color: #007bff; /* Color por defecto */
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 24px;
+  text-decoration: none;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  text-align: left;
+  transition: all 0.2s ease-in-out;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+  position: relative;
+  overflow: hidden;
+}
+
+.home-card:before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 4px;
+  width: 100%;
+  background-color: var(--card-color);
+  transition: height 0.3s ease;
+}
+
+.home-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+  border-color: var(--card-color);
+}
+
+.home-card:hover:before {
+  height: 100%;
+}
+
+.card-icon {
+  background-color: var(--card-color);
+  color: white;
+  min-width: 80px;
+  height: 80px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+  transition: transform 0.3s ease;
+}
+
+.home-card:hover .card-icon {
+  transform: scale(1.1);
+}
+
+.card-content {
+  z-index: 1;
+  transition: color 0.3s ease;
+}
+
+.card-content h3 {
+  margin: 0 0 8px 0;
+  font-size: 1.25rem;
+  color: var(--text-heavy);
+}
+
+.card-content p {
+  margin: 0;
+  color: var(--text-2);
+  line-height: 1.5;
+}
+
+.home-card:hover .card-content h3,
+.home-card:hover .card-content p {
+  color: white;
+}
+
+.card-go {
+  margin-left: auto;
+  font-size: 2rem;
+  z-index: 1;
+  color: var(--border);
+  transition: transform 0.3s ease, color 0.3s ease;
+}
+
+.home-card:hover .card-go {
+  transform: translateX(5px);
+  color: white;
+}

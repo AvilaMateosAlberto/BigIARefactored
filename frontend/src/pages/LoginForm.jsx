@@ -56,7 +56,7 @@ export default function LoginPage() {
       // Login correcto → cerrar modal y navegar
       closeAlert();
       login(user, menu, permissions, accessToken);
-      navigate("/inicio", { replace: true });
+      navigate("/home", { replace: true });
 
     } catch (err) {
       console.error("Error login:", err?.response || err);

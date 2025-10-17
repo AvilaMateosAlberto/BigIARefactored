@@ -139,11 +139,12 @@ INSERT INTO public.menu_items
 (7, 'Gestor endpoints', NULL, '/configuracion/endpoints', 'Tune', 1, 7, 'link', 5),
 (8, 'Usuarios', NULL, '/configuracion/usuarios', 'People', 2, 4, 'link', 5),
 (9, 'Personalización', NULL, '/configuracion/personalizacion', 'Palette', 3, 2, 'link', 5),
-(10, 'Inicio', 'https://www.geserisk.es/', '/inicio', 'Home', 1, 1, 'link', NULL),
+(10, 'Inicio', NULL, '/home', 'Home', 1, 1, 'link', NULL),
 (11, 'FG100F Events', '/kibana/app/dashboards?auth_provider_hint=publicaccess#/view/a0b097fb-5eab-4b6d-9155-8b83974087f8?embed=true&_g=%28refreshInterval%3A%28pause%3A%21t%2Cvalue%3A60000%29%2Ctime%3A%28from%3Anow-15m%2Cto%3Anow%29%29&show-query-input=true&show-time-filter=true', '/dashboards/fg100fevents', 'EmojiEvents', 2, 1, 'link', 1),
 (12, 'FG100F Egress Events', '/kibana/app/dashboards?auth_provider_hint=publicaccess#/view/263b7880-831c-11f0-8232-87d9605708a2?embed=true&_g=%28refreshInterval%3A%28pause%3A%21t%2Cvalue%3A60000%29%2Ctime%3A%28from%3Anow-15m%2Cto%3Anow%29%29&show-query-input=true&show-time-filter=true', '/dashboards/mfegressevents', 'ArrowUpward', 3, 1, 'link', 1),
 (13, 'Mashfrog Firewall Overview', '/kibana/app/dashboards?auth_provider_hint=publicaccess#/view/fortinet_fortigate-d0cd8230-0c8b-11ed-bb95-158df2ca77e4?embed=true&_g=%28refreshInterval%3A%28pause%3A%21t%2Cvalue%3A60000%29%2Ctime%3A%28from%3Anow-15m%2Cto%3Anow%29%29&show-query-input=true&show-time-filter=true', '/fortigate-100f/mfover', 'RemoveRedEyeOutlined', 1, 1, 'link', 1),
-(14, 'Roles y Permisos', NULL, '/configuracion/roles', 'AdminPanelSettings', 4, 8, 'link', 5)
+(14, 'Roles y Permisos', NULL, '/configuracion/roles', 'AdminPanelSettings', 4, 8, 'link', 5),
+(15, 'Web Corporativa', 'https://www.geserisk.es/', NULL, 'public', 6, 1, 'link', NULL)
 ON CONFLICT(id) DO NOTHING;
 
 -- Configuración app

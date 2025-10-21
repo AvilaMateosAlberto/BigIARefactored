@@ -134,3 +134,6 @@
   transform: translateX(5px);
   color: white;
 }
+.home-card, .home-card:hover {
+  text-decoration: none; /* Elimina el subrayado tanto en estado normal como al pasar el ratón */
+}
